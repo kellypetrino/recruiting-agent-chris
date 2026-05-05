@@ -1,0 +1,321 @@
+# Target companies for Chris Petrino's job-scraping agent.
+# BC Carroll School of Management, May 2026 — targeting Financial Analyst,
+# Operations Analyst, Business Analyst, Program/Project Manager roles.
+#
+# Tier 1 = highest priority (connection/most relevant), check daily, surface aggressively.
+# Tier 2 = strong interest, check daily, normal scoring.
+# Tier 3 = opportunistic, check daily, only surface if score is high.
+#
+# ats: which provider hosts the company's job board. One of:
+#   greenhouse | lever | ashby | workday | custom
+# board_id: the company's slug on that ATS.
+#   Greenhouse: boards-api.greenhouse.io/v1/boards/{board_id}/jobs
+#   Lever:      api.lever.co/v0/postings/{board_id}
+#   Ashby:      api.ashbyhq.com/posting-api/job-board/{board_id}
+# Note: companies with ats: custom have no public API — set up email job alerts manually.
+
+companies:
+  # ---------- Tier 1 ----------
+  - name: Bilt
+    tier: 1
+    ats: custom
+    board_id: TODO
+    notes: "Chris interned here summer 2025. Check careers.biltrewards.com to find ATS provider."
+
+  - name: FanDuel
+    tier: 1
+    ats: greenhouse
+    board_id: fanduel
+    notes: "Sports + FinTech crossover, NYC-based. Highly relevant to finance/ops profile."
+
+  - name: NBA
+    tier: 1
+    ats: custom
+    board_id: TODO
+    notes: "Chris is currently interviewing here for a Workflow Development role. Check nba.com/careers."
+
+  # ---------- Tier 2 ----------
+  - name: Ramp
+    tier: 2
+    ats: ashby
+    board_id: ramp
+    notes: "FinTech spend management, NYC HQ."
+
+  - name: Brex
+    tier: 2
+    ats: ashby
+    board_id: brex
+    notes: "FinTech corporate cards/spend. Verify board_id if no results."
+
+  - name: SoFi
+    tier: 2
+    ats: greenhouse
+    board_id: sofi
+    notes: "FinTech/personal finance, NYC presence."
+
+  - name: Olo
+    tier: 2
+    ats: greenhouse
+    board_id: olo
+    notes: "FinTech for restaurants, NYC-based."
+
+  - name: Peloton
+    tier: 2
+    ats: greenhouse
+    board_id: pelotoncycling
+    notes: "NYC HQ, strong finance/ops function."
+
+  - name: Clay
+    tier: 2
+    ats: ashby
+    board_id: clay
+    notes: "NYC-based startup, relevant GTM/ops roles."
+
+  - name: Capital One
+    tier: 2
+    ats: custom
+    board_id: TODO
+    notes: "Major bank with strong analyst programs. Set up email alerts at capitalonecareers.com."
+
+  - name: Mastercard
+    tier: 2
+    ats: custom
+    board_id: TODO
+    notes: "Payments leader, NYC presence. careers.mastercard.com — Workday-based."
+
+  - name: Visa
+    tier: 2
+    ats: custom
+    board_id: TODO
+    notes: "Payments leader. careers.visa.com — Workday-based."
+
+  - name: American Express
+    tier: 2
+    ats: custom
+    board_id: TODO
+    notes: "NYC HQ, strong finance/ops culture. jobs.americanexpress.com."
+
+  - name: JPMorgan
+    tier: 2
+    ats: custom
+    board_id: TODO
+    notes: "NYC HQ, large analyst program intake. careers.jpmorgan.com."
+
+  - name: Rivian
+    tier: 2
+    ats: greenhouse
+    board_id: rivian
+    notes: "EV/tech company, finance/ops roles."
+
+  - name: Commvault
+    tier: 2
+    ats: greenhouse
+    board_id: commvault
+    notes: "Tech company, NJ-based — geographically convenient."
+
+  # ---------- Tier 3 ----------
+  - name: Citi
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "NYC HQ, large analyst intake. jobs.citi.com."
+
+  - name: Wells Fargo
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Major bank, NYC presence. wellsfargojobs.com."
+
+  - name: Google
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "careers.google.com — no standard ATS. Set up job alert emails."
+
+  - name: Accenture
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Large consulting/ops firm. accenture.com/us-en/careers."
+
+  - name: Deloitte
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Big 4, analyst programs. deloitte.com/us/careers."
+
+  - name: KPMG
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Big 4, strong advisory analyst track. kpmg.com/us/careers."
+
+  - name: PwC
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Big 4. pwc.com/us/careers."
+
+  - name: Cognizant
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "IT/ops consulting, NYC presence. careers.cognizant.com."
+
+  - name: ADP
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "HQ in Roseland NJ — close to home base. jobs.adp.com."
+
+  - name: Fiserv
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "FinTech/payments. careers.fiserv.com — Workday-based."
+
+  - name: Broadridge Financial
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "FinTech/financial services, NYC area. careers.broadridge.com."
+
+  - name: Prudential
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "NJ HQ (Newark), large finance/ops function. prudential.com/careers."
+
+  - name: Northern Trust
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Asset management/financial services. northerntrust.com/careers."
+
+  - name: Honeywell
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "NJ HQ (Morris Plains), industrial/ops. careers.honeywell.com — Workday-based."
+
+  - name: Verizon
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "NJ HQ (Basking Ridge), strong finance/ops function. mycareer.verizon.com."
+
+  - name: Global Business Travel Group
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Travel-tech/FinTech, NYC presence. careers.amexgbt.com."
+
+  - name: Booking.com
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "NYC office, travel tech, finance/ops roles. careers.booking.com."
+
+  - name: Expedia
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Travel tech, NYC office. expediagroup.com/careers."
+
+  - name: Self Financial
+    tier: 3
+    ats: ashby
+    board_id: selffinancial
+    notes: "FinTech credit-building. Verify board_id — may differ."
+
+  - name: InComm Payments
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Payments/FinTech. incomm.com/careers."
+
+  - name: Cohn Reznick
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Accounting/advisory, NYC office. cohnreznick.com/careers."
+
+  - name: Scotiabank
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Canadian bank with NYC operations. careers.scotiabank.com."
+
+  - name: Santander
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Bank, NYC/Boston presence. santandercareersusa.com."
+
+  - name: Cardworks
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Credit card services, NJ-based. cardworks.com/careers."
+
+  - name: Bread Financial
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "FinTech/credit. breadfinancial.com/careers."
+
+  - name: CompoSecure
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Metal card manufacturer, NJ-based. composecure.com/careers."
+
+  - name: PayPal
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Payments giant, NYC presence. paypal.com/us/jobs."
+
+  - name: Campus
+    tier: 3
+    ats: ashby
+    board_id: campus
+    notes: "EdTech startup. Verify board_id."
+
+# Search filters applied across all sources at the rule-based pre-filter stage.
+filters:
+  title_keywords_include:
+    - "analyst"
+    - "financial analyst"
+    - "finance"
+    - "operations"
+    - "business analyst"
+    - "program manager"
+    - "project manager"
+    - "associate"
+    - "rotational"
+    - "workflow"
+    - "coordinator"
+    - "fp&a"
+    - "planning"
+    - "reporting"
+    - "accounting"
+  title_keywords_exclude:
+    - "director"
+    - "VP"
+    - "vice president"
+    - "head of"
+    - "principal"
+    - "intern"
+  locations_include:
+    - "new york"
+    - "nyc"
+    - "ny"
+    - "new jersey"
+    - "nj"
+    - "secaucus"
+    - "remote"
+    - "remote - us"
+    - "remote (us)"
+    - "united states"
+  max_age_days: 14

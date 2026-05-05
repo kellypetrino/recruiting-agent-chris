@@ -1,0 +1,32 @@
+{
+  "absolute_url": "https://job-boards.greenhouse.io/anthropic/jobs/5161980008",
+  "data_compliance": [
+    {
+      "type": "gdpr",
+      "requires_consent": false,
+      "requires_processing_consent": false,
+      "requires_retention_consent": false,
+      "retention_period": null,
+      "demographic_data_consent_applies": false
+    }
+  ],
+  "internal_job_id": 4447625008,
+  "location": {
+    "name": "London, UK"
+  },
+  "metadata": [
+    {
+      "id": 4036944008,
+      "name": "Location Type",
+      "value": "On-Site",
+      "value_type": "single_select"
+    }
+  ],
+  "id": 5161980008,
+  "updated_at": "2026-04-01T10:49:08-04:00",
+  "requisition_id": "PIP-261459",
+  "title": "Account Executive, Beneficial Deployments (French Speaking)",
+  "company_name": "Anthropic",
+  "first_published": "2026-03-25T10:53:39-04:00",
+  "language": "en"
+}
