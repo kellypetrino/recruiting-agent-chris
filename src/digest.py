@@ -145,7 +145,7 @@ _TEMPLATE = """<!DOCTYPE html>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
              background:#f5f5f5;margin:0;padding:24px;">
 <div style="max-width:680px;margin:0 auto;">
-  <h1 style="font-size:22px;color:#111;margin-bottom:4px;">Job Digest — {date}</h1>
+  <h1 style="font-size:22px;color:#111;margin-bottom:4px;">Chris's Job Digest — {date}</h1>
   <p style="font-size:13px;color:#888;margin-top:0;">{summary_line}</p>
   {body}
   <p style="font-size:12px;color:#aaa;margin-top:32px;text-align:center;">
@@ -263,9 +263,9 @@ def send_digest(tier1: list[DigestJob], tier2: list[DigestJob]) -> str:
     resend.api_key = api_key
     total = len(tier1) + len(tier2)
     subject = (
-        f"Job digest: {total} new role{'s' if total != 1 else ''} "
+        f"Chris's job digest: {total} new role{'s' if total != 1 else ''} "
         f"({len(tier1)} strong match{'es' if len(tier1) != 1 else ''})"
-        if total else "Job digest: no new roles today"
+        if total else "Chris's job digest: no new roles today"
     )
 
     response = resend.Emails.send({
