@@ -113,6 +113,30 @@ companies:
     board_id: commvault
     notes: "Tech company, NJ-based — geographically convenient."
 
+  - name: Affirm
+    tier: 2
+    ats: greenhouse
+    board_id: affirm
+    notes: "BNPL FinTech, NYC presence, strong finance/ops function."
+
+  - name: Toast
+    tier: 2
+    ats: greenhouse
+    board_id: toast
+    notes: "Restaurant FinTech, Boston HQ — similar space to Olo, relevant background."
+
+  - name: Fidelity
+    tier: 2
+    ats: workday
+    board_id: fmr/wd1/fidelitycareers
+    notes: "Boston HQ, massive finance/ops function, strong new grad programs."
+
+  - name: State Street
+    tier: 2
+    ats: workday
+    board_id: statestreet/wd1/Global
+    notes: "Boston HQ, asset management and operations-heavy, large analyst intake."
+
   # ---------- Tier 3 ----------
   - name: Citi
     tier: 3
@@ -281,6 +305,48 @@ companies:
     ats: ashby
     board_id: campus
     notes: "EdTech startup. Verify board_id."
+
+  - name: HubSpot
+    tier: 3
+    ats: greenhouse
+    board_id: hubspot
+    notes: "Boston HQ, strong finance/ops/analyst roles."
+
+  - name: Klaviyo
+    tier: 3
+    ats: greenhouse
+    board_id: klaviyo
+    notes: "Boston HQ, fast-growing, finance/ops function."
+
+  - name: DraftKings
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Boston HQ, sports + FinTech — great fit given NBA interest. No public ATS API found. draftkings.com/careers."
+
+  - name: Wayfair
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "Boston HQ, known for strong analytics/finance programs. No public ATS API found. wayfair.com/careers."
+
+  - name: Morgan Stanley
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "NYC HQ, large analyst intake. morganstanley.com/careers — set up email alerts."
+
+  - name: BlackRock
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "NYC HQ, asset management, strong ops/finance culture. careers.blackrock.com."
+
+  - name: BNY Mellon
+    tier: 3
+    ats: custom
+    board_id: TODO
+    notes: "NYC HQ, custodian bank, large analyst intake. bnymellon.com/careers."
 
 # Search filters applied across all sources at the rule-based pre-filter stage.
 filters:
