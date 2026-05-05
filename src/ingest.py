@@ -10,7 +10,7 @@ from sqlalchemy.dialects.sqlite import insert
 from src import sources
 from src.db import Job, SessionLocal, init_db
 from src.normalize import JobPosting
-from src.sources import ashby, greenhouse, lever
+from src.sources import ashby, greenhouse, lever, workday
 
 log = structlog.get_logger(__name__)
 
@@ -20,6 +20,7 @@ _ATS_HANDLERS = {
     "greenhouse": greenhouse.fetch_jobs,
     "lever": lever.fetch_jobs,
     "ashby": ashby.fetch_jobs,
+    "workday": workday.fetch_jobs,
 }
 
 
@@ -65,9 +66,12 @@ def run_ingest(config_path: Path = _CONFIG_PATH) -> dict:
 
     stats: dict[str, dict] = {}
 
-    with httpx.Client(
+    workday_client = workday.make_client()
+    default_client = httpx.Client(
         headers={"User-Agent": "recruiting-agent/0.1 (personal job search tool)"}
-    ) as client:
+    )
+
+    with default_client, workday_client:
         with SessionLocal() as session:
             for company_cfg in companies:
                 name = company_cfg["name"]
@@ -83,6 +87,7 @@ def run_ingest(config_path: Path = _CONFIG_PATH) -> dict:
                     log.warning("ingest.unknown_ats", company=name, ats=ats)
                     continue
 
+                client = workday_client if ats == "workday" else default_client
                 try:
                     postings = handler(board_id, name, client)
                     inserted, skipped = upsert_postings(postings, session)

@@ -43,9 +43,9 @@ companies:
 
   - name: Brex
     tier: 2
-    ats: ashby
+    ats: greenhouse
     board_id: brex
-    notes: "FinTech corporate cards/spend. Verify board_id if no results."
+    notes: "FinTech corporate cards/spend."
 
   - name: SoFi
     tier: 2
@@ -55,57 +55,57 @@ companies:
 
   - name: Olo
     tier: 2
-    ats: greenhouse
+    ats: lever
     board_id: olo
     notes: "FinTech for restaurants, NYC-based."
 
   - name: Peloton
     tier: 2
     ats: greenhouse
-    board_id: pelotoncycling
+    board_id: peloton
     notes: "NYC HQ, strong finance/ops function."
 
   - name: Clay
     tier: 2
-    ats: ashby
-    board_id: clay
-    notes: "NYC-based startup, relevant GTM/ops roles."
+    ats: custom
+    board_id: TODO
+    notes: "NYC-based startup. Couldn't find public ATS — check clay.com/careers."
 
   - name: Capital One
     tier: 2
-    ats: custom
-    board_id: TODO
-    notes: "Major bank with strong analyst programs. Set up email alerts at capitalonecareers.com."
+    ats: workday
+    board_id: capitalone/wd12/Capital_One
+    notes: "Major bank with strong analyst programs."
 
   - name: Mastercard
     tier: 2
-    ats: custom
-    board_id: TODO
-    notes: "Payments leader, NYC presence. careers.mastercard.com — Workday-based."
+    ats: workday
+    board_id: mastercard/wd1/CorporateCareers
+    notes: "Payments leader, NYC presence."
 
   - name: Visa
     tier: 2
-    ats: custom
-    board_id: TODO
-    notes: "Payments leader. careers.visa.com — Workday-based."
+    ats: workday
+    board_id: visa/wd5/Visa_Early_Careers
+    notes: "Payments leader — using early careers board, ideal for new grads."
 
   - name: American Express
     tier: 2
     ats: custom
     board_id: TODO
-    notes: "NYC HQ, strong finance/ops culture. jobs.americanexpress.com."
+    notes: "NYC HQ. jobs.americanexpress.com — tenant unclear, set up email alerts."
 
   - name: JPMorgan
     tier: 2
     ats: custom
     board_id: TODO
-    notes: "NYC HQ, large analyst program intake. careers.jpmorgan.com."
+    notes: "NYC HQ, uses Oracle Cloud not Workday. careers.jpmorgan.com — set up email alerts."
 
   - name: Rivian
     tier: 2
-    ats: greenhouse
-    board_id: rivian
-    notes: "EV/tech company, finance/ops roles."
+    ats: custom
+    board_id: TODO
+    notes: "EV/tech company. No public ATS API found — check rivian.com/careers."
 
   - name: Commvault
     tier: 2
@@ -118,13 +118,13 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
-    notes: "NYC HQ, large analyst intake. jobs.citi.com."
+    notes: "NYC HQ, large analyst intake. Workday board name unconfirmed — check jobs.citi.com."
 
   - name: Wells Fargo
     tier: 3
-    ats: custom
-    board_id: TODO
-    notes: "Major bank, NYC presence. wellsfargojobs.com."
+    ats: workday
+    board_id: wf/wd1/WellsFargoJobs
+    notes: "Major bank, NYC presence."
 
   - name: Google
     tier: 3
@@ -134,75 +134,75 @@ companies:
 
   - name: Accenture
     tier: 3
-    ats: custom
-    board_id: TODO
-    notes: "Large consulting/ops firm. accenture.com/us-en/careers."
+    ats: workday
+    board_id: accenture/wd103/AccentureCareers
+    notes: "Large consulting/ops firm."
 
   - name: Deloitte
     tier: 3
     ats: custom
     board_id: TODO
-    notes: "Big 4, analyst programs. deloitte.com/us/careers."
+    notes: "Big 4 — US Workday tenant unclear. deloitte.com/us/careers — set up email alerts."
 
   - name: KPMG
     tier: 3
     ats: custom
     board_id: TODO
-    notes: "Big 4, strong advisory analyst track. kpmg.com/us/careers."
+    notes: "Big 4, no confirmed Workday URL. kpmguscareers.com — set up email alerts."
 
   - name: PwC
     tier: 3
-    ats: custom
-    board_id: TODO
-    notes: "Big 4. pwc.com/us/careers."
+    ats: workday
+    board_id: pwc/wd3/Global_Experienced_Careers
+    notes: "Big 4."
 
   - name: Cognizant
     tier: 3
     ats: custom
     board_id: TODO
-    notes: "IT/ops consulting, NYC presence. careers.cognizant.com."
+    notes: "IT/ops consulting, NYC presence. careers.cognizant.com — set up email alerts."
 
   - name: ADP
     tier: 3
     ats: custom
     board_id: TODO
-    notes: "HQ in Roseland NJ — close to home base. jobs.adp.com."
+    notes: "HQ in Roseland NJ — uses proprietary jobs.adp.com portal, not Workday."
 
   - name: Fiserv
     tier: 3
-    ats: custom
-    board_id: TODO
-    notes: "FinTech/payments. careers.fiserv.com — Workday-based."
+    ats: workday
+    board_id: fiserv/wd5/EXT
+    notes: "FinTech/payments."
 
   - name: Broadridge Financial
     tier: 3
-    ats: custom
-    board_id: TODO
-    notes: "FinTech/financial services, NYC area. careers.broadridge.com."
+    ats: workday
+    board_id: broadridge/wd5/Careers
+    notes: "FinTech/financial services, NYC area."
 
   - name: Prudential
     tier: 3
-    ats: custom
-    board_id: TODO
-    notes: "NJ HQ (Newark), large finance/ops function. prudential.com/careers."
+    ats: workday
+    board_id: pru/wd5/Careers
+    notes: "NJ HQ (Newark), large finance/ops function."
 
   - name: Northern Trust
     tier: 3
-    ats: custom
-    board_id: TODO
-    notes: "Asset management/financial services. northerntrust.com/careers."
+    ats: workday
+    board_id: ntrs/wd1/northerntrust
+    notes: "Asset management/financial services."
 
   - name: Honeywell
     tier: 3
     ats: custom
     board_id: TODO
-    notes: "NJ HQ (Morris Plains), industrial/ops. careers.honeywell.com — Workday-based."
+    notes: "NJ HQ (Morris Plains) — uses Oracle Cloud not Workday. careers.honeywell.com."
 
   - name: Verizon
     tier: 3
-    ats: custom
-    board_id: TODO
-    notes: "NJ HQ (Basking Ridge), strong finance/ops function. mycareer.verizon.com."
+    ats: workday
+    board_id: verizon/wd12/verizon-careers
+    notes: "NJ HQ (Basking Ridge), strong finance/ops function."
 
   - name: Global Business Travel Group
     tier: 3
@@ -224,9 +224,9 @@ companies:
 
   - name: Self Financial
     tier: 3
-    ats: ashby
+    ats: greenhouse
     board_id: selffinancial
-    notes: "FinTech credit-building. Verify board_id — may differ."
+    notes: "FinTech credit-building."
 
   - name: InComm Payments
     tier: 3
