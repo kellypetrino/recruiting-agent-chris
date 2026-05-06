@@ -55,7 +55,7 @@ selected_companies = st.sidebar.multiselect("Company", companies, default=compan
 view = st.sidebar.radio(
     "Show",
     ["Scored (8+)", "Scored (6+)", "All passed filter", "Everything"],
-    index=0,
+    index=1,
 )
 
 min_age = st.sidebar.slider("Posted within (days)", 1, 60, 14)
