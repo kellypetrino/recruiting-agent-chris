@@ -43,45 +43,46 @@ def _title_passes(title: str, include_kws: list[str], exclude_kws: list[str]) ->
 
 # ── Location filtering ────────────────────────────────────────────────────────
 
-# Patterns we accept — NYC variants and US-remote signals
-_NYC_RE = re.compile(
-    r"\b(new york|nyc|ny\b|manhattan|brooklyn|queens|bronx)\b", re.IGNORECASE
+# Patterns we accept — NYC/NJ variants and US-remote signals
+_NYC_NJ_RE = re.compile(
+    r"\b(new york|nyc|manhattan|brooklyn|queens|bronx"
+    r"|new jersey|secaucus|jersey city|newark|hoboken|parsippany|tinton falls|basking ridge"
+    r"|roseland|morris plains|camden)\b",
+    re.IGNORECASE,
 )
+_NY_ABBREV_RE = re.compile(r"\bny\b", re.IGNORECASE)
+_NJ_ABBREV_RE = re.compile(r"\bnj\b", re.IGNORECASE)
 _REMOTE_US_RE = re.compile(
     r"\b(remote[\s\-]?(us|united states|usa)?|remote.friendly)\b", re.IGNORECASE
-)
-_INTL_ONLY_RE = re.compile(
-    r"^(paris|london|berlin|tokyo|singapore|sydney|toronto|bangalore|dublin|amsterdam)[\s,]",
-    re.IGNORECASE,
 )
 
 
 def _location_passes(location: str, allowed_patterns: list[str]) -> tuple[bool, str]:
     """Return (passed, reason).
 
-    We accept a job if its location string contains any NYC variant or any
-    US-remote signal. We reject if it's an international-only posting.
+    Accept if location includes NYC/NJ or US-remote signal.
+    Pass through if no location data — let the LLM decide.
     """
     if not location:
-        # No location info — don't drop it, let LLM decide
         return True, "no location data, passing through"
 
-    if _NYC_RE.search(location):
-        return True, "location includes NYC"
+    if _NYC_NJ_RE.search(location):
+        return True, "location includes NYC or NJ"
+
+    if _NY_ABBREV_RE.search(location):
+        return True, "location includes NY"
+
+    if _NJ_ABBREV_RE.search(location):
+        return True, "location includes NJ"
 
     if _REMOTE_US_RE.search(location):
         return True, "location includes US remote"
 
-    # Multi-city strings often include SF + NY — check for NY even in long strings
-    if re.search(r"\bnew york\b|\bnyc\b|\bny\b", location, re.IGNORECASE):
-        return True, "location includes New York"
-
-    # "United States" without a remote qualifier = probably onsite somewhere in US
-    # Keep it — LLM can judge whether there's a NY office option
+    # "United States" without a city = could have NY/NJ office; let LLM decide
     if re.search(r"\bunited states\b", location, re.IGNORECASE):
         return True, "location is United States (unspecified city)"
 
-    return False, f"location '{location[:60]}' not NYC or US-remote"
+    return False, f"location '{location[:60]}' not NYC/NJ or US-remote"
 
 
 # ── Age filtering ─────────────────────────────────────────────────────────────

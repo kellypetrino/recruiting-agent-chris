@@ -9,13 +9,17 @@ from src.filter_rules import apply_filter, _title_passes, _location_passes, _age
 # Shared filter config matching config/target_companies.yaml
 FILTER_CONFIG = {
     "title_keywords_include": [
-        "product manager", "product", "PM", "GTM", "go-to-market",
-        "deployment", "forward deployed", "solutions", "applied", "technical program",
+        "analyst", "financial analyst", "finance", "operations", "business analyst",
+        "program manager", "project manager", "associate", "rotational", "workflow",
+        "coordinator", "fp&a", "planning", "reporting", "accounting",
     ],
     "title_keywords_exclude": [
-        "director", "VP", "vice president", "head of", "principal", "intern", "junior",
+        "director", "VP", "vice president", "head of", "principal", "intern",
     ],
-    "locations_include": ["new york", "nyc", "ny", "remote", "remote - us", "remote (us)", "united states"],
+    "locations_include": [
+        "new york", "nyc", "ny", "new jersey", "nj", "secaucus",
+        "remote", "remote - us", "remote (us)", "united states",
+    ],
     "max_age_days": 14,
 }
 
@@ -25,20 +29,28 @@ NOW = datetime.utcnow()
 # ── Title filtering ───────────────────────────────────────────────────────────
 
 class TestTitleFilter:
-    def test_passes_product_manager(self):
-        ok, _ = _title_passes("Product Manager, Foundation Models", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+    def test_passes_financial_analyst(self):
+        ok, _ = _title_passes("Financial Analyst, FP&A", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert ok
 
-    def test_passes_gtm(self):
-        ok, _ = _title_passes("GTM Lead, Enterprise", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+    def test_passes_operations_analyst(self):
+        ok, _ = _title_passes("Operations Analyst", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert ok
 
-    def test_passes_deployment(self):
-        ok, _ = _title_passes("Deployment Engineer", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+    def test_passes_business_analyst(self):
+        ok, _ = _title_passes("Business Analyst, Technology", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert ok
 
-    def test_passes_solutions(self):
-        ok, _ = _title_passes("Solutions Engineer", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+    def test_passes_program_manager(self):
+        ok, _ = _title_passes("Program Manager, Workflow Development", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+        assert ok
+
+    def test_passes_associate(self):
+        ok, _ = _title_passes("Finance Associate", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+        assert ok
+
+    def test_passes_rotational(self):
+        ok, _ = _title_passes("Rotational Analyst Program", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert ok
 
     def test_fails_no_keywords(self):
@@ -46,33 +58,33 @@ class TestTitleFilter:
         assert not ok
 
     def test_fails_director(self):
-        ok, reason = _title_passes("Director of Product", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+        ok, reason = _title_passes("Director of Finance", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert not ok
         assert "director" in reason
 
     def test_fails_vp(self):
-        ok, _ = _title_passes("VP of Product Management", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+        ok, _ = _title_passes("VP of Operations", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert not ok
 
     def test_fails_head_of(self):
-        ok, _ = _title_passes("Head of GTM", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+        ok, _ = _title_passes("Head of Finance", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert not ok
 
     def test_fails_principal(self):
-        ok, _ = _title_passes("Principal PM", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+        ok, _ = _title_passes("Principal Analyst", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert not ok
 
     def test_fails_intern(self):
-        ok, _ = _title_passes("Product Manager Intern", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+        ok, _ = _title_passes("Financial Analyst Intern", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert not ok
 
     def test_case_insensitive_exclude(self):
-        ok, _ = _title_passes("DIRECTOR of Engineering", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+        ok, _ = _title_passes("DIRECTOR of Operations", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert not ok
 
     def test_exclude_beats_include(self):
-        # "VP of Product" — 'product' would include but 'VP' should exclude
-        ok, _ = _title_passes("VP of Product", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
+        # "VP of Finance" — 'finance' would include but 'VP' should exclude
+        ok, _ = _title_passes("VP of Finance", FILTER_CONFIG["title_keywords_include"], FILTER_CONFIG["title_keywords_exclude"])
         assert not ok
 
 
@@ -124,6 +136,22 @@ class TestLocationFilter:
         ok, _ = _location_passes("London, UK", FILTER_CONFIG["locations_include"])
         assert not ok
 
+    def test_passes_new_jersey(self):
+        ok, _ = _location_passes("New Jersey, United States", FILTER_CONFIG["locations_include"])
+        assert ok
+
+    def test_passes_nj_abbreviation(self):
+        ok, _ = _location_passes("Secaucus, NJ", FILTER_CONFIG["locations_include"])
+        assert ok
+
+    def test_passes_nj_city(self):
+        ok, _ = _location_passes("Jersey City, NJ", FILTER_CONFIG["locations_include"])
+        assert ok
+
+    def test_passes_tinton_falls(self):
+        ok, _ = _location_passes("Tinton Falls, NJ", FILTER_CONFIG["locations_include"])
+        assert ok
+
     def test_fails_sf_only(self):
         ok, _ = _location_passes("San Francisco, CA", FILTER_CONFIG["locations_include"])
         assert not ok
@@ -158,18 +186,27 @@ class TestAgeFilter:
 # ── Integration: apply_filter ─────────────────────────────────────────────────
 
 class TestApplyFilter:
-    def test_good_job_passes(self):
+    def test_good_nyc_job_passes(self):
         result = apply_filter(
-            title="Product Manager, AI Platform",
+            title="Financial Analyst, FP&A",
             location="New York, NY",
             posted_date=NOW - timedelta(days=5),
             config=FILTER_CONFIG,
         )
         assert result.passed
 
+    def test_good_nj_job_passes(self):
+        result = apply_filter(
+            title="Operations Analyst",
+            location="Secaucus, NJ",
+            posted_date=NOW - timedelta(days=3),
+            config=FILTER_CONFIG,
+        )
+        assert result.passed
+
     def test_director_fails(self):
         result = apply_filter(
-            title="Director of Product",
+            title="Director of Finance",
             location="New York, NY",
             posted_date=NOW - timedelta(days=5),
             config=FILTER_CONFIG,
@@ -178,7 +215,7 @@ class TestApplyFilter:
 
     def test_paris_only_fails(self):
         result = apply_filter(
-            title="Product Manager",
+            title="Business Analyst",
             location="Paris",
             posted_date=NOW - timedelta(days=5),
             config=FILTER_CONFIG,
@@ -187,7 +224,7 @@ class TestApplyFilter:
 
     def test_old_job_fails(self):
         result = apply_filter(
-            title="Product Manager",
+            title="Financial Analyst",
             location="New York, NY",
             posted_date=NOW - timedelta(days=60),
             config=FILTER_CONFIG,
@@ -196,7 +233,7 @@ class TestApplyFilter:
 
     def test_good_remote_job_passes(self):
         result = apply_filter(
-            title="GTM Lead",
+            title="Operations Analyst",
             location="Remote - US",
             posted_date=NOW - timedelta(days=2),
             config=FILTER_CONFIG,
@@ -205,7 +242,7 @@ class TestApplyFilter:
 
     def test_reason_included_in_result(self):
         result = apply_filter(
-            title="VP of Product",
+            title="VP of Finance",
             location="New York, NY",
             posted_date=NOW - timedelta(days=1),
             config=FILTER_CONFIG,

@@ -319,10 +319,9 @@ companies:
 
   - name: PayPal
     tier: 3
-    ats: custom
-    board_id: TODO
-    career_url: "https://paypal.eightfold.ai/careers?query=analyst+operations&location=New+York"
-    notes: "Payments giant, NYC presence. paypal.com/us/jobs."
+    ats: eightfold
+    board_id: paypal/paypal.com
+    notes: "Payments giant, NYC presence. Uses Eightfold AI ATS."
 
   - name: Campus
     tier: 3
@@ -358,10 +357,9 @@ companies:
 
   - name: Morgan Stanley
     tier: 3
-    ats: custom
-    board_id: TODO
-    career_url: "https://morganstanley.tal.net/vx/lang-en-GB/candidate/jobboard/vacancy/3/adv/?q=analyst+new+york&f_Item_Opportunity_Location_Description_en=New+York%2C+NY%2C+United+States+of+America"
-    notes: "NYC HQ, large analyst intake. morganstanley.com/careers — set up email alerts."
+    ats: eightfold
+    board_id: morganstanley/morganstanley.com
+    notes: "NYC HQ, large analyst intake. Uses Eightfold AI ATS."
 
   - name: BlackRock
     tier: 3

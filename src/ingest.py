@@ -9,10 +9,9 @@ from sqlalchemy.dialects.sqlite import insert
 
 import anthropic
 
-from src import sources
 from src.db import Job, SessionLocal, init_db
 from src.normalize import JobPosting
-from src.sources import ashby, custom_scraper, greenhouse, lever, workday
+from src.sources import ashby, custom_scraper, eightfold, greenhouse, lever, workday
 
 log = structlog.get_logger(__name__)
 
@@ -23,6 +22,7 @@ _ATS_HANDLERS = {
     "lever": lever.fetch_jobs,
     "ashby": ashby.fetch_jobs,
     "workday": workday.fetch_jobs,
+    "eightfold": eightfold.fetch_jobs,
 }
 
 

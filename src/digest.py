@@ -1,16 +1,18 @@
 """Daily email digest builder and sender.
 
-Groups scored jobs into tiers and sends a formatted HTML email via Resend.
+Groups scored jobs into tiers and sends a formatted HTML email via Gmail SMTP.
 Jobs with score >= 8 go in Tier 1, 6-7 in Tier 2. Lower scores are skipped.
 Falls back gracefully if no jobs have been scored yet.
 """
 
 import os
-import textwrap
+import smtplib
+import ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from datetime import date, datetime, timedelta
 from typing import NamedTuple
 
-import resend
 import structlog
 
 from src.db import Job, SessionLocal, init_db
@@ -21,9 +23,10 @@ SCORE_TIER1 = 8   # surface aggressively
 SCORE_TIER2 = 6   # surface normally
 MIN_SCORE = 6     # below this: skip from email
 
-_digest_to_raw = os.getenv("DIGEST_TO_EMAIL", "richardpetrino1@comcast.net,petrinochris@gmail.com")
+_digest_to_raw = os.getenv("DIGEST_TO_EMAIL", "petrinochris@gmail.com,richardpetrino1@comcast.net")
 DIGEST_TO = [e.strip() for e in _digest_to_raw.split(",") if e.strip()]
-DIGEST_FROM = os.getenv("DIGEST_FROM_EMAIL", "jobs@resend.dev")
+GMAIL_USER = os.getenv("GMAIL_USER", "")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "")
 
 
 class DigestJob(NamedTuple):
@@ -255,12 +258,10 @@ def render_text(tier1: list[DigestJob], tier2: list[DigestJob]) -> str:
 # ── Sending ───────────────────────────────────────────────────────────────────
 
 def send_digest(tier1: list[DigestJob], tier2: list[DigestJob]) -> str:
-    """Send the digest email. Returns the Resend message ID."""
-    api_key = os.getenv("RESEND_API_KEY")
-    if not api_key:
-        raise RuntimeError("RESEND_API_KEY not set")
+    """Send the digest email via Gmail SMTP. Returns a status string."""
+    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
+        raise RuntimeError("GMAIL_USER and GMAIL_APP_PASSWORD must be set")
 
-    resend.api_key = api_key
     total = len(tier1) + len(tier2)
     subject = (
         f"Chris's job digest: {total} new role{'s' if total != 1 else ''} "
@@ -268,15 +269,20 @@ def send_digest(tier1: list[DigestJob], tier2: list[DigestJob]) -> str:
         if total else "Chris's job digest: no new roles today"
     )
 
-    response = resend.Emails.send({
-        "from": DIGEST_FROM,
-        "to": DIGEST_TO,
-        "subject": subject,
-        "html": render_html(tier1, tier2),
-        "text": render_text(tier1, tier2),
-    })
-    log.info("digest.sent", message_id=response["id"], to=DIGEST_TO, total=total)
-    return response["id"]
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = GMAIL_USER
+    msg["To"] = ", ".join(DIGEST_TO)
+    msg.attach(MIMEText(render_text(tier1, tier2), "plain"))
+    msg.attach(MIMEText(render_html(tier1, tier2), "html"))
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+        server.sendmail(GMAIL_USER, DIGEST_TO, msg.as_string())
+
+    log.info("digest.sent", to=DIGEST_TO, total=total)
+    return f"sent to {DIGEST_TO}"
 
 
 def run_digest(all_time: bool = False) -> dict:
