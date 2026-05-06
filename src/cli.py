@@ -29,8 +29,11 @@ def cmd_ingest(args: argparse.Namespace) -> None:
     stats = run_ingest()
     print(json.dumps(stats, indent=2))
     errors = [k for k, v in stats.items() if v.get("error")]
+    successes = [k for k, v in stats.items() if not v.get("error")]
     if errors:
-        log.error("cli.ingest.errors", companies=errors)
+        log.warning("cli.ingest.some_errors", failed=errors, succeeded=len(successes))
+    if not successes:
+        log.error("cli.ingest.all_failed")
         sys.exit(1)
 
 
