@@ -20,6 +20,7 @@ companies:
     tier: 1
     ats: custom
     board_id: TODO
+    career_url: "https://www.biltrewards.com/careers"
     notes: "Chris interned here summer 2025. Check careers.biltrewards.com to find ATS provider."
 
   - name: FanDuel
@@ -32,6 +33,7 @@ companies:
     tier: 1
     ats: custom
     board_id: TODO
+    career_url: "https://nbacareers.nba.com"
     notes: "Chris is currently interviewing here for a Workflow Development role. Check nba.com/careers."
 
   # ---------- Tier 2 ----------
@@ -69,6 +71,7 @@ companies:
     tier: 2
     ats: custom
     board_id: TODO
+    career_url: "https://www.clay.com/careers"
     notes: "NYC-based startup. Couldn't find public ATS — check clay.com/careers."
 
   - name: Capital One
@@ -93,18 +96,21 @@ companies:
     tier: 2
     ats: custom
     board_id: TODO
+    career_url: "https://aexp.eightfold.ai/careers?query=financial+analyst&location=New+York"
     notes: "NYC HQ. jobs.americanexpress.com — tenant unclear, set up email alerts."
 
   - name: JPMorgan
     tier: 2
     ats: custom
     board_id: TODO
+    career_url: "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/requisitions?keyword=analyst&location=New+York%2C+New+York&locationId=300000000149325&locationLevel=city&mode=location"
     notes: "NYC HQ, uses Oracle Cloud not Workday. careers.jpmorgan.com — set up email alerts."
 
   - name: Rivian
     tier: 2
     ats: custom
     board_id: TODO
+    career_url: "https://rivian.com/careers/jobs?department=Finance+%26+Accounting"
     notes: "EV/tech company. No public ATS API found — check rivian.com/careers."
 
   - name: Commvault
@@ -142,6 +148,7 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://jobs.citi.com/search-jobs/analyst/new-york-ny/287/1/2"
     notes: "NYC HQ, large analyst intake. Workday board name unconfirmed — check jobs.citi.com."
 
   - name: Wells Fargo
@@ -154,6 +161,7 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://careers.google.com/jobs/results/?q=analyst+operations&location=New+York%2C+NY%2C+USA&employment_type=FULL_TIME"
     notes: "careers.google.com — no standard ATS. Set up job alert emails."
 
   - name: Accenture
@@ -166,12 +174,14 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://apply.deloitte.com/careers/SearchJobs/analyst?285=175790&285_format=6449&listFilterMode=1"
     notes: "Big 4 — US Workday tenant unclear. deloitte.com/us/careers — set up email alerts."
 
   - name: KPMG
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://kpmguscareers.com/search/?q=analyst&location=new+york"
     notes: "Big 4, no confirmed Workday URL. kpmguscareers.com — set up email alerts."
 
   - name: PwC
@@ -184,12 +194,14 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://careers.cognizant.com/global/en/search-results?keywords=analyst&location=new+york"
     notes: "IT/ops consulting, NYC presence. careers.cognizant.com — set up email alerts."
 
   - name: ADP
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://jobs.adp.com/jobs/?keywords=analyst&location=new+jersey"
     notes: "HQ in Roseland NJ — uses proprietary jobs.adp.com portal, not Workday."
 
   - name: Fiserv
@@ -220,6 +232,7 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://careers.honeywell.com/us/en/search-results?keywords=analyst&location=new+jersey"
     notes: "NJ HQ (Morris Plains) — uses Oracle Cloud not Workday. careers.honeywell.com."
 
   - name: Verizon
@@ -232,18 +245,21 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://careers.amexgbt.com/search/?q=analyst&location=new+york"
     notes: "Travel-tech/FinTech, NYC presence. careers.amexgbt.com."
 
   - name: Booking.com
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://careers.booking.com/jobs/?location=New+York"
     notes: "NYC office, travel tech, finance/ops roles. careers.booking.com."
 
   - name: Expedia
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://careers.expediagroup.com/jobs/?location=New+York"
     notes: "Travel tech, NYC office. expediagroup.com/careers."
 
   - name: Self Financial
@@ -256,48 +272,56 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://www.incomm.com/careers/"
     notes: "Payments/FinTech. incomm.com/careers."
 
   - name: Cohn Reznick
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://www.cohnreznick.com/careers/open-positions"
     notes: "Accounting/advisory, NYC office. cohnreznick.com/careers."
 
   - name: Scotiabank
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://careers.scotiabank.com/us/en/search-results?keywords=analyst&location=new+york"
     notes: "Canadian bank with NYC operations. careers.scotiabank.com."
 
   - name: Santander
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://www.santandercareersusa.com/search-jobs?keywords=analyst&location=new+york"
     notes: "Bank, NYC/Boston presence. santandercareersusa.com."
 
   - name: Cardworks
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://www.cardworks.com/careers"
     notes: "Credit card services, NJ-based. cardworks.com/careers."
 
   - name: Bread Financial
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://breadfinancial.com/en/company/careers.html"
     notes: "FinTech/credit. breadfinancial.com/careers."
 
   - name: CompoSecure
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://www.composecure.com/careers"
     notes: "Metal card manufacturer, NJ-based. composecure.com/careers."
 
   - name: PayPal
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://paypal.eightfold.ai/careers?query=analyst+operations&location=New+York"
     notes: "Payments giant, NYC presence. paypal.com/us/jobs."
 
   - name: Campus
@@ -322,30 +346,35 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://careers.draftkings.com/jobs/?keywords=analyst"
     notes: "Boston HQ, sports + FinTech — great fit given NBA interest. No public ATS API found. draftkings.com/careers."
 
   - name: Wayfair
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://www.wayfair.com/careers/jobs"
     notes: "Boston HQ, known for strong analytics/finance programs. No public ATS API found. wayfair.com/careers."
 
   - name: Morgan Stanley
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://morganstanley.tal.net/vx/lang-en-GB/candidate/jobboard/vacancy/3/adv/?q=analyst&f_Item_Opportunity_Location_Description_en=New+York"
     notes: "NYC HQ, large analyst intake. morganstanley.com/careers — set up email alerts."
 
   - name: BlackRock
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://careers.blackrock.com/early-careers/americas/"
     notes: "NYC HQ, asset management, strong ops/finance culture. careers.blackrock.com."
 
   - name: BNY Mellon
     tier: 3
     ats: custom
     board_id: TODO
+    career_url: "https://bnymellon.eightfold.ai/careers?query=analyst&location=New+York"
     notes: "NYC HQ, custodian bank, large analyst intake. bnymellon.com/careers."
 
 # Search filters applied across all sources at the rule-based pre-filter stage.

@@ -40,28 +40,37 @@ Background highlights:
 Your job: read a job posting and score its fit for Chris on a 0–10 scale.
 
 EXPERIENCE LEVEL (new grad, 0 years full-time experience):
-  - Ideal: "entry-level", "new grad", "analyst", "associate", "rotational program", 0–2 years required
-  - Acceptable: roles stating 1–3 years (slight mismatch, common for analyst tracks)
-  - Penalize: roles requiring 3–5 years (drop 2 points)
-  - Hard reject: roles explicitly requiring 5+ years (score ≤ 3)
-  - If no experience requirement is stated, don't penalize — assume it's fine
+  - Ideal: "entry-level", "new grad", "analyst", "associate", "rotational program", 0 years required, or no requirement stated
+  - Acceptable: roles stating "0-1 years" where the description clearly welcomes new grads
+  - Hard reject: any role explicitly requiring 1+ years of professional experience (score ≤ 3)
+  - Hard reject: any role with a minimum GPA requirement (score ≤ 3)
+  - If no experience requirement is stated, assume entry-level and don't penalize
+
+LOCATION PRIORITY:
+  - Top priority: New York City, NYC, Manhattan, Brooklyn, Queens — these are ideal
+  - Strong: New Jersey (NJ), Secaucus, Jersey City, Newark — these are great
+  - Acceptable: US-remote or "Remote (US)" roles
+  - Penalize: Boston-only roles (drop 1 point — less preferred but not a hard reject)
+  - Hard reject: international-only, or US cities far from NYC/NJ/Boston with no remote option
 
 SCORING GUIDE (use these anchors):
   9–10: Perfect fit. Financial Analyst, FP&A Analyst, Operations Analyst, Business Analyst, or \
-        Program/Project Manager at a FinTech, finance, or tech company in NYC/NJ or remote. \
-        Entry-level, 0–2 years. Clear match to his Bilt background.
+        Program/Project Manager at a FinTech, finance, or tech company in NYC/NJ. \
+        Entry-level with no experience requirement. Clear match to his Bilt background.
         Example: "Financial Analyst, FP&A – New York" at a FinTech startup.
-  7–8:  Strong fit. Similar role in a slightly different industry, or right industry but more \
-        generalist. Rotational analyst programs and analyst development programs are great here.
-        Example: "Operations Associate" at a bank, or "Business Analyst" at a consulting firm.
-  5–6:  Possible fit. Analyst role in a tangential industry, or right industry but experience \
-        requirement is 2–3 years, or role is in the right direction but vague/generic title.
-  3–4:  Weak fit. Requires 3–5 years explicitly, or wrong function (marketing, HR, pure engineering).
-  1–2:  Poor fit. Requires deep technical expertise, is a people-manager role, or completely off-base.
+  7–8:  Strong fit. Right role/industry in NYC/NJ but slightly more generalist title, \
+        OR right role in US-remote, OR rotational analyst/development program anywhere.
+        Example: "Operations Associate" at a NYC bank, or "Business Analyst – Remote" at a tech firm.
+  5–6:  Possible fit. Good role but Boston-only, or right direction but vague/generic title \
+        in NYC/NJ, or analyst role in a tangential industry.
+  3–4:  Weak fit. Requires any experience, has a GPA requirement, wrong function \
+        (marketing, HR, pure engineering), or wrong location with no remote option.
+  1–2:  Poor fit. Requires deep technical expertise, people-manager role, or completely off-base.
   0:    No fit. Wrong function, too senior, international only, or executive-level.
 
 HARD NEGATIVES (always score ≤ 3):
-  - Roles explicitly requiring 5+ years of experience
+  - Any explicit experience requirement (e.g., "1+ years", "2 years required", "minimum 1 year")
+  - Any GPA requirement (e.g., "3.0 GPA minimum", "GPA of 3.5 or higher")
   - Director, VP, Head of, C-suite, or people-manager titles
   - International-only locations (outside US)
   - Pure engineering or deep coding roles
