@@ -45,7 +45,13 @@ Example:
 def _fetch_with_playwright(url: str) -> str:
     """Launch headless Chromium, load the page, wait for network idle, return full text."""
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+            ],
+        )
         context = browser.new_context(
             user_agent=(
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -53,7 +59,11 @@ def _fetch_with_playwright(url: str) -> str:
                 "Chrome/124.0.0.0 Safari/537.36"
             ),
             viewport={"width": 1280, "height": 900},
+            # Suppress webdriver flag that sites use to detect automation
+            extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
         )
+        # Hide navigator.webdriver
+        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         page = context.new_page()
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=_PAGE_TIMEOUT_MS)

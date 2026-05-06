@@ -33,7 +33,7 @@ companies:
     tier: 1
     ats: custom
     board_id: TODO
-    career_url: "https://nbacareers.nba.com"
+    career_url: "https://www.nba.com/careers"
     notes: "Chris is currently interviewing here for a Workflow Development role. Check nba.com/careers."
 
   # ---------- Tier 2 ----------
@@ -360,7 +360,7 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
-    career_url: "https://morganstanley.tal.net/vx/lang-en-GB/candidate/jobboard/vacancy/3/adv/?q=analyst&f_Item_Opportunity_Location_Description_en=New+York"
+    career_url: "https://morganstanley.tal.net/vx/lang-en-GB/candidate/jobboard/vacancy/3/adv/?q=analyst+new+york&f_Item_Opportunity_Location_Description_en=New+York%2C+NY%2C+United+States+of+America"
     notes: "NYC HQ, large analyst intake. morganstanley.com/careers — set up email alerts."
 
   - name: BlackRock
@@ -374,7 +374,7 @@ companies:
     tier: 3
     ats: custom
     board_id: TODO
-    career_url: "https://bnymellon.eightfold.ai/careers?query=analyst&location=New+York"
+    career_url: "https://eofe.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/BNY-Careers/jobs?keyword=analyst&mode=location&location=New+York%2C+New+York"
     notes: "NYC HQ, custodian bank, large analyst intake. bnymellon.com/careers."
 
 # Search filters applied across all sources at the rule-based pre-filter stage.
