@@ -70,7 +70,7 @@ SCORING GUIDE (use these anchors):
 
 HARD NEGATIVES (always score ≤ 3):
   - Any explicit experience requirement (e.g., "1+ years", "2 years required", "minimum 1 year")
-  - Any GPA requirement (e.g., "3.0 GPA minimum", "GPA of 3.5 or higher")
+  - GPA requirement above 3.2
   - Director, VP, Head of, C-suite, or people-manager titles
   - International-only locations (outside US)
   - Pure engineering or deep coding roles
