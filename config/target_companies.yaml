@@ -187,8 +187,8 @@ companies:
   - name: PwC
     tier: 3
     ats: workday
-    board_id: pwc/wd3/Global_Experienced_Careers
-    notes: "Big 4."
+    board_id: TODO
+    notes: "Big 4. Global_Experienced_Careers board fetches 4k+ international senior roles (useless). Need the correct US campus/early-career Workday board ID."
 
   - name: Cognizant
     tier: 3

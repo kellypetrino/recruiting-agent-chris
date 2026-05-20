@@ -290,7 +290,7 @@ def run_digest(all_time: bool = False) -> dict:
     if all_time:
         tier1, tier2 = fetch_all_scored_jobs()
     else:
-        tier1, tier2 = fetch_digest_jobs(since_days=1)
+        tier1, tier2 = fetch_digest_jobs(since_days=3)
 
     log.info("digest.fetched", tier1=len(tier1), tier2=len(tier2))
 

@@ -82,6 +82,10 @@ def _location_passes(location: str, allowed_patterns: list[str]) -> tuple[bool, 
     if re.search(r"\bunited states\b", location, re.IGNORECASE):
         return True, "location is United States (unspecified city)"
 
+    # Workday returns "N Locations" when a role spans multiple offices — could include NYC/NJ
+    if re.search(r"^\d+\s+locations?$", location.strip(), re.IGNORECASE):
+        return True, f"multi-location role ({location.strip()}), passing through to LLM"
+
     return False, f"location '{location[:60]}' not NYC/NJ or US-remote"
 
 
