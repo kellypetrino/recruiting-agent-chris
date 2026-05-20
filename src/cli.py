@@ -68,7 +68,25 @@ def cmd_filter(args: argparse.Namespace) -> None:
 
 def cmd_score(args: argparse.Namespace) -> None:
     """Run Stage 2 LLM scoring on jobs that passed Stage 1."""
+    from src.db import Job, SessionLocal, init_db
     from src.score import run_scoring
+
+    if args.rescore_unenriched:
+        init_db()
+        with SessionLocal() as session:
+            rows = (
+                session.query(Job)
+                .filter(
+                    Job.scored_at != None,  # noqa: E711
+                    Job.description_raw == "",
+                )
+                .all()
+            )
+            for job in rows:
+                job.scored_at = None
+                session.add(job)
+            session.commit()
+        log.info("cli.score.rescore_unenriched", reset=len(rows))
 
     log.info("cli.score.start")
     stats = run_scoring(dry_run=args.dry_run)
@@ -138,6 +156,11 @@ def main() -> None:
 
     score_p = sub.add_parser("score", help="Run Stage 2 LLM scoring on filtered jobs")
     score_p.add_argument("--dry-run", action="store_true", help="Score but don't write to DB")
+    score_p.add_argument(
+        "--rescore-unenriched",
+        action="store_true",
+        help="Reset scored_at for previously scored jobs that have no description, so they get re-enriched and re-scored",
+    )
 
     digest_p = sub.add_parser("digest", help="Send daily email digest via Resend")
     digest_p.add_argument("--all-time", action="store_true", help="Include all scored jobs, not just today's")

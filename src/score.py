@@ -10,12 +10,75 @@ import structlog
 from datetime import datetime
 
 import anthropic
+import httpx
 
 from src.db import Job, SessionLocal
 
 log = structlog.get_logger(__name__)
 
 MODEL = "claude-haiku-4-5-20251001"
+
+# ── Description enrichment ────────────────────────────────────────────────────
+
+_TAG_RE = re.compile(r"<[^>]+>")
+_WS_RE = re.compile(r"\s{2,}")
+
+
+def _strip_tags(html: str) -> str:
+    return _WS_RE.sub(" ", _TAG_RE.sub(" ", html)).strip()
+
+
+def _fetch_greenhouse_description(url: str, client: httpx.Client) -> str:
+    """Greenhouse boards API detail endpoint returns full job content as HTML."""
+    m = re.search(r"greenhouse\.io/([^/]+)/jobs/(\d+)", url)
+    if not m:
+        return ""
+    board_id, job_id = m.groups()
+    try:
+        resp = client.get(
+            f"https://boards-api.greenhouse.io/v1/boards/{board_id}/jobs/{job_id}",
+            timeout=15.0,
+        )
+        resp.raise_for_status()
+        return _strip_tags(resp.json().get("content", ""))
+    except Exception:
+        return ""
+
+
+def _fetch_workday_description(url: str, client: httpx.Client) -> str:
+    """Workday undocumented detail endpoint mirrors the list endpoint with the job path appended."""
+    m = re.match(
+        r"https://([^.]+)\.([^.]+)\.myworkdayjobs\.com/([^/]+)(/.+)",
+        url,
+    )
+    if not m:
+        return ""
+    tenant, instance, board, external_path = m.groups()
+    api_url = (
+        f"https://{tenant}.{instance}.myworkdayjobs.com"
+        f"/wday/cxs/{tenant}/{board}/jobs{external_path}"
+    )
+    try:
+        resp = client.get(api_url, timeout=15.0)
+        resp.raise_for_status()
+        data = resp.json()
+        desc = (
+            data.get("jobPostingInfo", {}).get("jobDescription", "")
+            or data.get("jobDescription", "")
+        )
+        return _strip_tags(desc)
+    except Exception:
+        return ""
+
+
+def enrich_description(job: Job, client: httpx.Client) -> str:
+    """Fetch a job description from its ATS API. Returns empty string on failure."""
+    if job.source == "greenhouse":
+        return _fetch_greenhouse_description(job.url, client)
+    if job.source == "workday":
+        return _fetch_workday_description(job.url, client)
+    return ""
+
 
 # ── Prompt ────────────────────────────────────────────────────────────────────
 
@@ -141,39 +204,71 @@ def run_scoring(min_score_threshold: float = 0.0, dry_run: bool = False) -> dict
 
     Returns summary stats.
     """
-    client = anthropic.Anthropic()
-    stats = {"scored": 0, "skipped_cached": 0, "errors": 0, "total_passed_filter": 0}
+    claude = anthropic.Anthropic()
+    stats = {
+        "scored": 0,
+        "skipped_cached": 0,
+        "errors": 0,
+        "total_passed_filter": 0,
+        "descriptions_fetched": 0,
+    }
 
-    with SessionLocal() as session:
-        jobs = (
-            session.query(Job)
-            .filter(Job.passed_prefilter == 1, Job.scored_at == None)  # noqa: E711
-            .all()
-        )
-        stats["total_passed_filter"] = len(jobs)
-        log.info("score.start", jobs_to_score=len(jobs))
+    with httpx.Client(
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            )
+        }
+    ) as http:
+        with SessionLocal() as session:
+            jobs = (
+                session.query(Job)
+                .filter(Job.passed_prefilter == 1, Job.scored_at == None)  # noqa: E711
+                .all()
+            )
+            stats["total_passed_filter"] = len(jobs)
+            log.info("score.start", jobs_to_score=len(jobs))
 
-        for job in jobs:
-            try:
-                result = score_job(job, client)
-                score = result.get("score", 0)
-                if not dry_run:
-                    job.score = float(score)
-                    job.score_rationale = result.get("rationale")
-                    job.score_flags = result.get("flags")
-                    job.scored_at = datetime.utcnow()
-                    session.add(job)
-                    session.commit()
-                stats["scored"] += 1
-                log.info(
-                    "score.job",
-                    company=job.company,
-                    title=job.title[:50],
-                    score=score,
-                    rationale=result.get("rationale", "")[:80],
-                )
-            except Exception:
-                log.exception("score.error", job_id=job.job_id, title=job.title[:50])
-                stats["errors"] += 1
+            for job in jobs:
+                # Fetch description before scoring if not already stored
+                if not job.description_raw:
+                    desc = enrich_description(job, http)
+                    if desc:
+                        stats["descriptions_fetched"] += 1
+                        log.info(
+                            "score.description_fetched",
+                            company=job.company,
+                            title=job.title[:50],
+                            chars=len(desc),
+                        )
+                        if not dry_run:
+                            job.description_raw = desc
+                            session.add(job)
+                            session.commit()
+                        else:
+                            job.description_raw = desc  # in-memory only for dry run
+
+                try:
+                    result = score_job(job, claude)
+                    score = result.get("score", 0)
+                    if not dry_run:
+                        job.score = float(score)
+                        job.score_rationale = result.get("rationale")
+                        job.score_flags = result.get("flags")
+                        job.scored_at = datetime.utcnow()
+                        session.add(job)
+                        session.commit()
+                    stats["scored"] += 1
+                    log.info(
+                        "score.job",
+                        company=job.company,
+                        title=job.title[:50],
+                        score=score,
+                        rationale=result.get("rationale", "")[:80],
+                    )
+                except Exception:
+                    log.exception("score.error", job_id=job.job_id, title=job.title[:50])
+                    stats["errors"] += 1
 
     return stats
