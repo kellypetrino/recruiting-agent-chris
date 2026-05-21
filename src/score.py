@@ -1,22 +1,23 @@
-"""Stage 2: LLM-based relevance scoring via Claude Haiku 4.5.
+"""Stage 2: Rule-based qualification screening.
 
-Scores each job 0-10 against Chris's target profile. Results are cached in the
-DB by job_id — a job is never re-scored.
+Parses job descriptions for experience requirements, GPA requirements,
+and entry-level signals. No LLM involved — fast and deterministic.
+
+Score values:
+  2 = entry-level / new-grad explicitly confirmed in listing
+  1 = no disqualifying requirements found
+  0 = disqualified (1+ years required, GPA req, senior title, internship, MBA)
 """
 
-import json
 import re
 import structlog
 from datetime import datetime
 
-import anthropic
 import httpx
 
 from src.db import Job, SessionLocal
 
 log = structlog.get_logger(__name__)
-
-MODEL = "claude-haiku-4-5-20251001"
 
 # ── Description enrichment ────────────────────────────────────────────────────
 
@@ -80,137 +81,187 @@ def enrich_description(job: Job, client: httpx.Client) -> str:
     return ""
 
 
-# ── Prompt ────────────────────────────────────────────────────────────────────
+# ── Qualification parsing ─────────────────────────────────────────────────────
 
-_SYSTEM = """\
-You are a recruiting assistant helping Christopher (Chris) Petrino, a May 2026 Boston College \
-graduate (BS in Management, concentrations in Finance & Operations Management), evaluate job \
-postings. He interned at Bilt (a $10B FinTech company) in Finance & Operations. He is targeting \
-entry-level roles in financial analysis, FP&A, operations, business analysis, and \
-program/project management. He strongly prefers New York City or New Jersey; US-remote roles \
-are acceptable. He wants to start as soon as possible (May/June 2026).
+_YEARS_PATTERNS = [
+    re.compile(r'(\d+)\s*\+\s*years?\s+(?:of\s+)?(?:relevant\s+|professional\s+|work\s+|prior\s+)?experience', re.I),
+    re.compile(r'(\d+)\s+or\s+more\s+years?\s+(?:of\s+)?(?:relevant\s+|professional\s+)?experience', re.I),
+    re.compile(r'minimum\s+(?:of\s+)?(\d+)\s*\+?\s*years?\s+(?:of\s+)?(?:experience|work)', re.I),
+    re.compile(r'at\s+least\s+(\d+)\s*\+?\s*years?\s+(?:of\s+)?(?:experience|work)', re.I),
+    re.compile(r'(\d+)\s*[-–]\s*\d+\s*years?\s+(?:of\s+)?(?:relevant\s+|professional\s+|work\s+)?experience', re.I),
+    re.compile(r'(\d+)\s*years?\s+of\s+(?:relevant\s+|professional\s+|full[- ]time\s+|work\s+|prior\s+)?experience', re.I),
+    re.compile(r'requires?\s+(\d+)\s*\+?\s*years?\s+(?:of\s+)?(?:experience|work)', re.I),
+    re.compile(r'experience\s*[:\-–]\s*(\d+)\s*\+?\s*years?', re.I),
+]
 
-Background highlights:
-- Finance & Operations coursework: Corporate Finance, Financial Accounting, Excel Analytics, \
-  Operations Management, Supply Chain Management
-- Bilt internship: financial modeling, FP&A support, cross-functional operations, data analysis, \
-  executive-facing deliverables (CFO briefs, partner contract summaries)
-- Technical skills: Excel (advanced), Python, RStudio, AI tools (Claude, ChatGPT, Gemini)
-- Strong interest in FinTech, payments, and tech-adjacent finance roles
-- Currently interviewing with the NBA for a Workflow Development role — sports, media, and \
-  entertainment organizations are also of interest
+_GPA_PATTERNS = [
+    re.compile(r'(?:minimum\s+)?gpa\s+(?:of\s+|requirement\s+(?:of\s+)?)(\d+\.\d+)', re.I),
+    re.compile(r'(\d+\.\d+)\s+(?:minimum\s+)?(?:cumulative\s+)?gpa', re.I),
+    re.compile(r'gpa[:\s]+(\d+\.\d+)', re.I),
+    re.compile(r'grade\s+point\s+average\s+(?:of\s+)?(\d+\.\d+)', re.I),
+]
 
-Your job: read a job posting and score its fit for Chris on a 0–10 scale.
+_ENTRY_LEVEL_SIGNALS = [
+    "new grad",
+    "new graduate",
+    "recent grad",
+    "recent graduate",
+    "entry level",
+    "entry-level",
+    "0-1 year",
+    "0 to 1 year",
+    "zero to one year",
+    "no experience required",
+    "no prior experience",
+    "recent college graduate",
+    "recent university graduate",
+    "graduating in 2025",
+    "graduating in 2026",
+    "class of 2025",
+    "class of 2026",
+    "class of 2027",
+    "rotational program",
+    "development program",
+    "analyst program",
+    "associate program",
+    "early career",
+    "early-career",
+    "campus hire",
+    "campus recruiting",
+    "university recruiting",
+    "new college graduate",
+]
 
-EXPERIENCE LEVEL (new grad, 0 years full-time experience):
-  - Ideal: "entry-level", "new grad", "analyst", "associate", "rotational program", 0 years required, or no requirement stated
-  - Acceptable: roles stating "0-1 years" where the description clearly welcomes new grads
-  - Hard reject: any role explicitly requiring 1+ years of professional experience (score ≤ 3)
-  - Hard reject: any role with a minimum GPA requirement (score ≤ 3)
-  - If no experience requirement is stated, assume entry-level and don't penalize
-
-LOCATION PRIORITY:
-  - Top priority: New York City, NYC, Manhattan, Brooklyn, Queens — these are ideal
-  - Strong: New Jersey (NJ), Secaucus, Jersey City, Newark — these are great
-  - Acceptable: US-remote or "Remote (US)" roles
-  - Penalize: Boston-only roles (drop 1 point — less preferred but not a hard reject)
-  - Hard reject: international-only, or US cities far from NYC/NJ/Boston with no remote option
-
-SCORING GUIDE (use these anchors):
-  9–10: Perfect fit. Financial Analyst, FP&A Analyst, Operations Analyst, Business Analyst, or \
-        Program/Project Manager at a FinTech, finance, or tech company in NYC/NJ. \
-        Entry-level with no experience requirement. Clear match to his Bilt background.
-        Example: "Financial Analyst, FP&A – New York" at a FinTech startup.
-  7–8:  Strong fit. Right role/industry in NYC/NJ but slightly more generalist title, \
-        OR right role in US-remote, OR rotational analyst/development program anywhere.
-        Example: "Operations Associate" at a NYC bank, or "Business Analyst – Remote" at a tech firm.
-  5–6:  Possible fit. Good role but Boston-only, or right direction but vague/generic title \
-        in NYC/NJ, or analyst role in a tangential industry.
-  3–4:  Weak fit. Requires any experience, has a GPA requirement, wrong function \
-        (marketing, HR, pure engineering), or wrong location with no remote option.
-  1–2:  Poor fit. Requires deep technical expertise, people-manager role, or completely off-base.
-  0:    No fit. Wrong function, too senior, international only, or executive-level.
-
-HARD NEGATIVES (always score ≤ 3):
-  - Any explicit experience requirement (e.g., "1+ years", "2 years required", "minimum 1 year")
-  - GPA requirement above 3.2
-  - Director, VP, Head of, C-suite, or people-manager titles
-  - International-only locations (outside US)
-  - Pure engineering or deep coding roles
-  - Internships (Chris needs full-time, not another internship)
-  - MBA required (he is a BC undergrad, not an MBA)
-
-Respond ONLY with a JSON object — no explanation outside the JSON:
-{
-  "score": <integer 0-10>,
-  "rationale": "<one sentence explaining why this fits or doesn't>",
-  "flags": "<one sentence on any red flags, or null if none>"
-}"""
-
-_USER_TEMPLATE = """\
-Company: {company}
-Title: {title}
-Location: {location}
-Remote policy: {remote_policy}
-
-Job description:
-{description}"""
+_SENIOR_TITLE_WORDS = [
+    "director",
+    "vice president",
+    " vp ",
+    "head of",
+    "principal",
+    "staff engineer",
+    "managing director",
+    "c-suite",
+    " cto",
+    " cfo",
+    " coo",
+    " ceo",
+    "svp",
+    "evp",
+    "avp",
+]
 
 
-# ── Scoring ───────────────────────────────────────────────────────────────────
-
-def _build_prompt(job: Job) -> str:
-    description = (job.description_raw or "")[:4000]  # Haiku context is ample; cap for cost
-    if not description:
-        description = "(No description available — score based on title and location only)"
-    return _USER_TEMPLATE.format(
-        company=job.company,
-        title=job.title,
-        location=job.location,
-        remote_policy=job.remote_policy,
-        description=description,
-    )
+def _extract_years_required(text: str) -> int | None:
+    for pattern in _YEARS_PATTERNS:
+        m = pattern.search(text)
+        if m:
+            val = int(m.group(1))
+            if val >= 1:
+                return val
+    return None
 
 
-def _parse_response(text: str) -> dict:
-    """Extract JSON from the model response, tolerating minor formatting issues."""
-    # Strip markdown code fences if present
-    text = re.sub(r"```(?:json)?", "", text).strip()
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        # Try to find a JSON object in the text
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if match:
-            return json.loads(match.group())
-        raise
+def _extract_gpa_required(text: str) -> float | None:
+    for pattern in _GPA_PATTERNS:
+        m = pattern.search(text)
+        if m:
+            val = float(m.group(1))
+            if 2.0 <= val <= 4.0:
+                return val
+    return None
 
 
-def score_job(job: Job, client: anthropic.Anthropic) -> dict:
-    """Score a single job. Returns parsed dict with score/rationale/flags."""
-    prompt = _build_prompt(job)
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=256,
-        system=[{"type": "text", "text": _SYSTEM, "cache_control": {"type": "ephemeral"}}],
-        messages=[{"role": "user", "content": prompt}],
-    )
-    raw = response.content[0].text
-    return _parse_response(raw)
+def evaluate_job(job: Job) -> dict:
+    """
+    Evaluate a job based on its description content.
+
+    Returns dict with score (0/1/2), rationale, flags.
+    """
+    title = (job.title or "").lower()
+    text = (job.description_raw or "").lower()
+
+    # Hard reject: senior/management title
+    for word in _SENIOR_TITLE_WORDS:
+        if word in title:
+            return {
+                "score": 0,
+                "rationale": f"Senior or management role ('{word.strip()}' in title)",
+                "flags": "Title indicates seniority — not entry-level",
+            }
+
+    # Hard reject: internship
+    if "intern" in title and "internal" not in title:
+        return {
+            "score": 0,
+            "rationale": "Internship position, not full-time",
+            "flags": "Internship",
+        }
+
+    # Hard reject: explicit experience requirement in description
+    years = _extract_years_required(text)
+    if years is not None:
+        return {
+            "score": 0,
+            "rationale": f"Requires {years}+ years of experience",
+            "flags": f"Experience requirement: {years}+ years",
+        }
+
+    # Hard reject: GPA requirement above threshold
+    gpa = _extract_gpa_required(text)
+    if gpa is not None and gpa > 3.2:
+        return {
+            "score": 0,
+            "rationale": f"GPA requirement of {gpa:.1f}",
+            "flags": f"GPA requirement: {gpa:.1f}",
+        }
+
+    # Hard reject: MBA required/preferred
+    if re.search(r'\bmba\b.{0,50}(?:required|preferred|must\b)', text, re.I) or \
+       re.search(r'(?:required|preferred|must\b).{0,50}\bmba\b', text, re.I):
+        return {
+            "score": 0,
+            "rationale": "MBA required or preferred",
+            "flags": "MBA requirement",
+        }
+
+    # Positive: explicitly entry-level / new grad friendly
+    for signal in _ENTRY_LEVEL_SIGNALS:
+        if signal in text or signal in title:
+            return {
+                "score": 2,
+                "rationale": f"Entry-level confirmed (\"{signal}\" in listing)",
+                "flags": None,
+            }
+
+    # Neutral: no disqualifying requirements found
+    if not text:
+        note = "No description available — not disqualified on title/location alone"
+    else:
+        note = "No experience or GPA requirements found in job description"
+    return {
+        "score": 1,
+        "rationale": note,
+        "flags": None,
+    }
 
 
-def run_scoring(min_score_threshold: float = 0.0, dry_run: bool = False) -> dict:
-    """Score all jobs that passed Stage 1 filter but haven't been scored yet.
+# ── Scoring runner ────────────────────────────────────────────────────────────
 
+def run_scoring(dry_run: bool = False) -> dict:
+    """Evaluate all jobs that passed Stage 1 filter but haven't been scored yet.
+
+    Fetches descriptions first, then applies rule-based qualification checks.
     Returns summary stats.
     """
-    claude = anthropic.Anthropic()
     stats = {
         "scored": 0,
         "skipped_cached": 0,
         "errors": 0,
         "total_passed_filter": 0,
         "descriptions_fetched": 0,
+        "disqualified": 0,
+        "entry_level_confirmed": 0,
+        "no_requirements": 0,
     }
 
     with httpx.Client(
@@ -250,8 +301,8 @@ def run_scoring(min_score_threshold: float = 0.0, dry_run: bool = False) -> dict
                             job.description_raw = desc  # in-memory only for dry run
 
                 try:
-                    result = score_job(job, claude)
-                    score = result.get("score", 0)
+                    result = evaluate_job(job)
+                    score = result["score"]
                     if not dry_run:
                         job.score = float(score)
                         job.score_rationale = result.get("rationale")
@@ -260,6 +311,12 @@ def run_scoring(min_score_threshold: float = 0.0, dry_run: bool = False) -> dict
                         session.add(job)
                         session.commit()
                     stats["scored"] += 1
+                    if score == 0:
+                        stats["disqualified"] += 1
+                    elif score == 2:
+                        stats["entry_level_confirmed"] += 1
+                    else:
+                        stats["no_requirements"] += 1
                     log.info(
                         "score.job",
                         company=job.company,

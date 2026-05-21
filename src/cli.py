@@ -67,7 +67,7 @@ def cmd_filter(args: argparse.Namespace) -> None:
 
 
 def cmd_score(args: argparse.Namespace) -> None:
-    """Run Stage 2 LLM scoring on jobs that passed Stage 1."""
+    """Run Stage 2 rule-based qualification screening on jobs that passed Stage 1."""
     from src.db import Job, SessionLocal, init_db
     from src.score import run_scoring
 

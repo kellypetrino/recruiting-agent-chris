@@ -1,7 +1,9 @@
 """Daily email digest builder and sender.
 
-Groups scored jobs into tiers and sends a formatted HTML email via Gmail SMTP.
-Jobs with score >= 8 go in Tier 1, 6-7 in Tier 2. Lower scores are skipped.
+Groups jobs into tiers based on rule-based qualification screening:
+  Tier 1 (score 2): entry-level/new-grad explicitly confirmed in the listing
+  Tier 2 (score 1): no disqualifying requirements found
+  Score 0 jobs are disqualified and excluded from the email.
 Falls back gracefully if no jobs have been scored yet.
 """
 
@@ -19,9 +21,9 @@ from src.db import Job, SessionLocal, init_db
 
 log = structlog.get_logger(__name__)
 
-SCORE_TIER1 = 8   # surface aggressively
-SCORE_TIER2 = 6   # surface normally
-MIN_SCORE = 6     # below this: skip from email
+SCORE_TIER1 = 2   # entry-level explicitly confirmed
+SCORE_TIER2 = 1   # no disqualifying requirements found
+MIN_SCORE = 1     # score 0 = disqualified, exclude from email
 
 _digest_to_raw = os.getenv("DIGEST_TO_EMAIL", "petrinochris@gmail.com,richardpetrino1@comcast.net")
 DIGEST_TO = [e.strip() for e in _digest_to_raw.split(",") if e.strip()]
@@ -195,22 +197,22 @@ def render_html(tier1: list[DigestJob], tier2: list[DigestJob]) -> str:
         body = _EMPTY_BODY.format(score=MIN_SCORE)
     else:
         summary = (
-            f"{total} new role{'s' if total != 1 else ''} — "
-            f"{len(tier1)} strong match{'es' if len(tier1) != 1 else ''}, "
-            f"{len(tier2)} possible."
+            f"{total} role{'s' if total != 1 else ''} — "
+            f"{len(tier1)} entry-level confirmed, "
+            f"{len(tier2)} no requirements found."
         )
         sections = []
         if tier1:
             rows = "".join(_render_job(j) for j in tier1)
             sections.append(_SECTION.format(
-                heading=f"Strong matches — score 8+ ({len(tier1)})",
+                heading=f"Entry-level confirmed ({len(tier1)})",
                 bg="#16a34a",
                 rows=rows,
             ))
         if tier2:
             rows = "".join(_render_job(j) for j in tier2)
             sections.append(_SECTION.format(
-                heading=f"Possible matches — score 6–7 ({len(tier2)})",
+                heading=f"No requirements found ({len(tier2)})",
                 bg="#2563eb",
                 rows=rows,
             ))
@@ -229,7 +231,7 @@ def render_text(tier1: list[DigestJob], tier2: list[DigestJob]) -> str:
         return "\n".join(lines)
 
     if tier1:
-        lines.append(f"STRONG MATCHES (score 8+) — {len(tier1)} role(s)")
+        lines.append(f"ENTRY-LEVEL CONFIRMED — {len(tier1)} role(s)")
         lines.append("-" * 50)
         for j in tier1:
             lines.append(f"[{int(j.score)}] {j.title} — {j.company}")
@@ -241,7 +243,7 @@ def render_text(tier1: list[DigestJob], tier2: list[DigestJob]) -> str:
             lines.append("")
 
     if tier2:
-        lines.append(f"POSSIBLE MATCHES (score 6–7) — {len(tier2)} role(s)")
+        lines.append(f"NO REQUIREMENTS FOUND — {len(tier2)} role(s)")
         lines.append("-" * 50)
         for j in tier2:
             lines.append(f"[{int(j.score)}] {j.title} — {j.company}")
