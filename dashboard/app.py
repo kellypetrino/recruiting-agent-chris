@@ -54,11 +54,11 @@ selected_companies = st.sidebar.multiselect("Company", companies, default=compan
 
 view = st.sidebar.radio(
     "Show",
-    ["Scored (8+)", "Scored (6+)", "All passed filter", "Everything"],
+    ["Strong (7+)", "Possible (5+)", "All passed filter", "Everything"],
     index=1,
 )
 
-min_age = st.sidebar.slider("Posted within (days)", 1, 60, 14)
+min_age = st.sidebar.slider("Posted within (days)", 1, 90, 60)
 
 # ── Apply filters ─────────────────────────────────────────────────────────────
 
@@ -69,10 +69,10 @@ filtered = filtered[
     filtered["posted_date"].isna() | (filtered["posted_date"] >= age_cutoff)
 ]
 
-if view == "Scored (8+)":
-    filtered = filtered[filtered["score"] >= 8]
-elif view == "Scored (6+)":
-    filtered = filtered[filtered["score"] >= 6]
+if view == "Strong (7+)":
+    filtered = filtered[filtered["score"] >= 7]
+elif view == "Possible (5+)":
+    filtered = filtered[filtered["score"] >= 5]
 elif view == "All passed filter":
     filtered = filtered[filtered["passed_prefilter"] == 1]
 
@@ -95,13 +95,20 @@ if filtered.empty:
 else:
     for _, row in filtered.iterrows():
         score = row["score"]
-        score_str = f"**{int(score)}**/10" if pd.notna(score) else "—"
-
-        if pd.notna(score) and score >= 8:
+        if pd.notna(score) and score >= 7:
+            score_str = f"**{int(score)}/10**"
             border = "#16a34a"
-        elif pd.notna(score) and score >= 6:
+        elif pd.notna(score) and score >= 5:
+            score_str = f"**{int(score)}/10**"
             border = "#2563eb"
+        elif pd.notna(score) and score > 0:
+            score_str = f"{int(score)}/10"
+            border = "#d1d5db"
+        elif pd.notna(score):
+            score_str = "✗"
+            border = "#d1d5db"
         else:
+            score_str = "—"
             border = "#d1d5db"
 
         with st.container():

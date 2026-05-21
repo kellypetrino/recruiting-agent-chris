@@ -202,16 +202,90 @@ def _extract_gpa_required(text: str) -> float | None:
     return None
 
 
+# ── Content-based scoring signals ────────────────────────────────────────────
+
+# Role relevance: keywords found in title or description → points
+_ROLE_STRONG = [
+    "fp&a", "financial planning", "financial analyst", "financial analysis",
+    "fpa analyst", "operations analyst", "business analyst", "business analysis",
+    "program manager", "project manager", "workflow", "rotational",
+    "associate analyst", "analyst associate",
+]
+_ROLE_MODERATE = [
+    "finance", "operations", "analyst", "associate", "coordinator",
+    "planning", "reporting", "accounting", "strategy", "business operations",
+]
+
+# Industry relevance: keywords found in description → points
+_INDUSTRY_STRONG = [
+    "fintech", "payments", "payment processing", "financial technology",
+    "sports", "media", "entertainment", "nba", "nfl", "nhl", "mlb",
+]
+_INDUSTRY_MODERATE = [
+    "banking", "financial services", "investment", "insurance",
+    "technology", "software", "saas", "platform", "startup",
+]
+
+# Location fit: matched against job.location
+_LOCATION_TOP = ["new york", "nyc", "manhattan", "brooklyn", "queens", "bronx"]
+_LOCATION_STRONG = ["new jersey", " nj", "jersey city", "newark", "secaucus", "hoboken"]
+_LOCATION_REMOTE = ["remote"]
+_LOCATION_OK = ["boston"]
+
+
+def _location_points(location: str) -> tuple[int, str]:
+    loc = location.lower()
+    for kw in _LOCATION_TOP:
+        if kw in loc:
+            return 3, f"NYC ({location})"
+    for kw in _LOCATION_STRONG:
+        if kw in loc:
+            return 3, f"NJ ({location})"
+    if any(kw in loc for kw in _LOCATION_REMOTE):
+        return 2, "Remote"
+    if any(kw in loc for kw in _LOCATION_OK):
+        return 1, f"Boston ({location})"
+    # multi-location Workday passthrough — could include NYC
+    if re.search(r'^\d+\s+locations?$', loc.strip()):
+        return 2, "Multiple locations"
+    return 0, location
+
+
+def _role_points(title: str, text: str) -> tuple[int, str]:
+    combined = title + " " + text
+    for kw in _ROLE_STRONG:
+        if kw in combined:
+            return 4, kw
+    for kw in _ROLE_MODERATE:
+        if kw in combined:
+            return 2, kw
+    return 1, "role unclear"
+
+
+def _industry_points(text: str) -> tuple[int, str]:
+    for kw in _INDUSTRY_STRONG:
+        if kw in text:
+            return 2, kw
+    for kw in _INDUSTRY_MODERATE:
+        if kw in text:
+            return 1, kw
+    return 0, ""
+
+
 def evaluate_job(job: Job) -> dict:
     """
-    Evaluate a job based on its description content.
+    Evaluate a job. Returns dict with score (0–10), rationale, flags.
 
-    Returns dict with score (0/1/2), rationale, flags.
+    Score 0 = hard disqualified (experience req, GPA, MBA, senior title, internship).
+    Scores 1–10 = passes, ranked by location fit + role relevance + industry fit
+                  + explicit new-grad signal.
     """
     title = (job.title or "").lower()
     text = (job.description_raw or "").lower()
+    location = (job.location or "")
 
-    # Hard reject: senior/management title
+    # ── Hard disqualifiers (score 0) ──────────────────────────────────────────
+
     for word in _SENIOR_TITLE_WORDS:
         if word in title:
             return {
@@ -220,7 +294,6 @@ def evaluate_job(job: Job) -> dict:
                 "flags": "Title indicates seniority — not entry-level",
             }
 
-    # Hard reject: internship
     if "intern" in title and "internal" not in title:
         return {
             "score": 0,
@@ -228,7 +301,6 @@ def evaluate_job(job: Job) -> dict:
             "flags": "Internship",
         }
 
-    # Hard reject: explicit experience requirement in description
     years = _extract_years_required(text)
     if years is not None:
         return {
@@ -237,7 +309,6 @@ def evaluate_job(job: Job) -> dict:
             "flags": f"Experience requirement: {years}+ years",
         }
 
-    # Hard reject: GPA requirement above threshold
     gpa = _extract_gpa_required(text)
     if gpa is not None and gpa > 3.2:
         return {
@@ -246,7 +317,6 @@ def evaluate_job(job: Job) -> dict:
             "flags": f"GPA requirement: {gpa:.1f}",
         }
 
-    # Hard reject: MBA required/preferred
     if re.search(r'\bmba\b.{0,50}(?:required|preferred|must\b)', text, re.I) or \
        re.search(r'(?:required|preferred|must\b).{0,50}\bmba\b', text, re.I):
         return {
@@ -255,24 +325,38 @@ def evaluate_job(job: Job) -> dict:
             "flags": "MBA requirement",
         }
 
-    # Positive: explicitly entry-level / new grad friendly
+    # ── Content-based scoring (1–10) ─────────────────────────────────────────
+
+    loc_pts, loc_label = _location_points(location)   # 0–3
+    role_pts, role_label = _role_points(title, text)  # 1–4
+    ind_pts, ind_label = _industry_points(text)       # 0–2
+
+    # Bonus: listing explicitly welcomes new grads (+1)
+    new_grad_bonus = 0
+    new_grad_signal = ""
     for signal in _ENTRY_LEVEL_SIGNALS:
         if signal in text or signal in title:
-            return {
-                "score": 2,
-                "rationale": f"Entry-level confirmed (\"{signal}\" in listing)",
-                "flags": None,
-            }
+            new_grad_bonus = 1
+            new_grad_signal = signal
+            break
 
-    # Neutral: no disqualifying requirements found
+    raw = loc_pts + role_pts + ind_pts + new_grad_bonus  # 1–10
+    score = max(1, min(10, raw))
+
+    reasons = [f"location: {loc_label}", f"role: {role_label}"]
+    if ind_label:
+        reasons.append(f"industry: {ind_label}")
+    if new_grad_signal:
+        reasons.append(f"new-grad signal: \"{new_grad_signal}\"")
+
+    flags = None
     if not text:
-        note = "No description available — not disqualified on title/location alone"
-    else:
-        note = "No experience or GPA requirements found in job description"
+        flags = "No description fetched — scored on title/location only"
+
     return {
-        "score": 1,
-        "rationale": note,
-        "flags": None,
+        "score": score,
+        "rationale": "; ".join(reasons),
+        "flags": flags,
     }
 
 
@@ -291,8 +375,9 @@ def run_scoring(dry_run: bool = False) -> dict:
         "total_passed_filter": 0,
         "descriptions_fetched": 0,
         "disqualified": 0,
-        "entry_level_confirmed": 0,
-        "no_requirements": 0,
+        "strong_match": 0,
+        "possible_match": 0,
+        "weak_match": 0,
     }
 
     with httpx.Client(
@@ -344,10 +429,12 @@ def run_scoring(dry_run: bool = False) -> dict:
                     stats["scored"] += 1
                     if score == 0:
                         stats["disqualified"] += 1
-                    elif score == 2:
-                        stats["entry_level_confirmed"] += 1
+                    elif score >= 7:
+                        stats["strong_match"] += 1
+                    elif score >= 5:
+                        stats["possible_match"] += 1
                     else:
-                        stats["no_requirements"] += 1
+                        stats["weak_match"] += 1
                     log.info(
                         "score.job",
                         company=job.company,
