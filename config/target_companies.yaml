@@ -400,6 +400,12 @@ filters:
     - "head of"
     - "principal"
     - "intern"
+    - "retail"
+    - "sales associate"
+    - "customer service"
+    - "store manager"
+    - "technician"
+    - "engineer"
   locations_include:
     - "new york"
     - "nyc"
@@ -411,4 +417,4 @@ filters:
     - "remote - us"
     - "remote (us)"
     - "united states"
-  max_age_days: 14
+  max_age_days: 30

@@ -208,12 +208,15 @@ def _extract_gpa_required(text: str) -> float | None:
 _ROLE_STRONG = [
     "fp&a", "financial planning", "financial analyst", "financial analysis",
     "fpa analyst", "operations analyst", "business analyst", "business analysis",
-    "program manager", "project manager", "workflow", "rotational",
-    "associate analyst", "analyst associate",
+    "program manager", "project manager", "workflow development",
+    "rotational program", "analyst program", "associate program",
 ]
 _ROLE_MODERATE = [
-    "finance", "operations", "analyst", "associate", "coordinator",
-    "planning", "reporting", "accounting", "strategy", "business operations",
+    "finance analyst", "finance associate", "finance coordinator",
+    "operations associate", "operations coordinator", "operations manager",
+    "business operations", "revenue operations", "strategy analyst",
+    "planning analyst", "reporting analyst", "accounting analyst",
+    "data analyst", "analytics", "financial operations",
 ]
 
 # Industry relevance: keywords found in description → points
@@ -227,26 +230,26 @@ _INDUSTRY_MODERATE = [
 ]
 
 # Location fit: matched against job.location
-_LOCATION_TOP = ["new york", "nyc", "manhattan", "brooklyn", "queens", "bronx"]
-_LOCATION_STRONG = ["new jersey", " nj", "jersey city", "newark", "secaucus", "hoboken"]
-_LOCATION_REMOTE = ["remote"]
-_LOCATION_OK = ["boston"]
-
-
 def _location_points(location: str) -> tuple[int, str]:
-    loc = location.lower()
-    for kw in _LOCATION_TOP:
-        if kw in loc:
-            return 3, f"NYC ({location})"
-    for kw in _LOCATION_STRONG:
-        if kw in loc:
-            return 3, f"NJ ({location})"
-    if any(kw in loc for kw in _LOCATION_REMOTE):
+    loc = location.lower().strip()
+    # NYC: require city-specific terms, not just "new york" (would match NY state addresses)
+    if any(kw in loc for kw in ["new york city", "nyc", "manhattan", "brooklyn", "queens", "bronx"]):
+        return 3, f"NYC ({location})"
+    if re.search(r'\bnew york,?\s+ny\b', loc):
+        return 3, f"NYC ({location})"
+    # NJ
+    if any(kw in loc for kw in ["new jersey", "jersey city", "newark", "secaucus", "hoboken"]):
+        return 3, f"NJ ({location})"
+    if re.search(r'\b\w[\w\s]+,\s*nj\b', loc):
+        return 3, f"NJ ({location})"
+    # Remote
+    if "remote" in loc:
         return 2, "Remote"
-    if any(kw in loc for kw in _LOCATION_OK):
+    # Boston
+    if "boston" in loc:
         return 1, f"Boston ({location})"
-    # multi-location Workday passthrough — could include NYC
-    if re.search(r'^\d+\s+locations?$', loc.strip()):
+    # Multi-location Workday passthrough — could include NYC
+    if re.search(r'^\d+\s+locations?$', loc):
         return 2, "Multiple locations"
     return 0, location
 
@@ -277,8 +280,21 @@ def evaluate_job(job: Job) -> dict:
     Evaluate a job. Returns dict with score (0–10), rationale, flags.
 
     Score 0 = hard disqualified (experience req, GPA, MBA, senior title, internship).
-    Scores 1–10 = passes, ranked by location fit + role relevance + industry fit
-                  + explicit new-grad signal.
+    Scores 1–10 built from three components, in priority order:
+
+      1. Entry-level status (0–5 pts) — THE primary factor
+           Explicitly entry-level / new-grad confirmed: 5
+           No experience requirement found:             2
+      2. Location fit (0–3 pts)
+           NYC or NJ:   3
+           US Remote:   2
+           Boston:      1
+      3. Role relevance (0–2 pts)
+           Strong match (FP&A, financial analyst, BA, ops analyst, PM): 2
+           Moderate match (finance, operations, analyst, coordinator):   1
+
+    Max = 5+3+2 = 10. A confirmed entry-level job always outscores an
+    unconfirmed job at the same location/role.
     """
     title = (job.title or "").lower()
     text = (job.description_raw or "").lower()
@@ -325,33 +341,59 @@ def evaluate_job(job: Job) -> dict:
             "flags": "MBA requirement",
         }
 
-    # ── Content-based scoring (1–10) ─────────────────────────────────────────
+    # ── Component 1: entry-level status (0–5 pts) ────────────────────────────
 
-    loc_pts, loc_label = _location_points(location)   # 0–3
-    role_pts, role_label = _role_points(title, text)  # 1–4
-    ind_pts, ind_label = _industry_points(text)       # 0–2
-
-    # Bonus: listing explicitly welcomes new grads (+1)
-    new_grad_bonus = 0
+    entry_pts = 2  # default: no disqualifying requirements found
+    entry_label = "no experience requirement"
     new_grad_signal = ""
     for signal in _ENTRY_LEVEL_SIGNALS:
         if signal in text or signal in title:
-            new_grad_bonus = 1
+            entry_pts = 5
+            entry_label = f"entry-level confirmed (\"{signal}\")"
             new_grad_signal = signal
             break
 
-    raw = loc_pts + role_pts + ind_pts + new_grad_bonus  # 1–10
+    # ── Component 2: location fit (0–3 pts) ──────────────────────────────────
+
+    loc_pts, loc_label = _location_points(location)
+
+    # ── Component 3: role relevance (0–2 pts) ────────────────────────────────
+
+    role_pts = 0
+    role_label = "role unclear"
+    combined = title + " " + text
+    for kw in _ROLE_STRONG:
+        if kw in combined:
+            role_pts = 2
+            role_label = kw
+            break
+    if role_pts == 0:
+        for kw in _ROLE_MODERATE:
+            if kw in combined:
+                role_pts = 1
+                role_label = kw
+                break
+
+    # ── Industry bonus (0–1 pt) — tiebreaker only ────────────────────────────
+
+    ind_bonus = 0
+    ind_label = ""
+    for kw in _INDUSTRY_STRONG:
+        if kw in text:
+            ind_bonus = 1
+            ind_label = kw
+            break
+
+    raw = entry_pts + loc_pts + role_pts + ind_bonus
     score = max(1, min(10, raw))
 
-    reasons = [f"location: {loc_label}", f"role: {role_label}"]
+    reasons = [entry_label, f"location: {loc_label}", f"role: {role_label}"]
     if ind_label:
         reasons.append(f"industry: {ind_label}")
-    if new_grad_signal:
-        reasons.append(f"new-grad signal: \"{new_grad_signal}\"")
 
     flags = None
     if not text:
-        flags = "No description fetched — scored on title/location only"
+        flags = "No description fetched — entry-level status unknown"
 
     return {
         "score": score,
