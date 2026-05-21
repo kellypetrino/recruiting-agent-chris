@@ -179,6 +179,11 @@ _SENIOR_TITLE_WORDS = [
     "svp",
     "evp",
     "avp",
+    "senior",
+    " sr ",
+    "sr.",
+    "lead ",
+    " lead",
 ]
 
 
@@ -317,6 +322,15 @@ def evaluate_job(job: Job) -> dict:
             "flags": "Internship",
         }
 
+    # Hard reject: manager title that isn't program/project manager
+    _ENTRY_MANAGER_OK = ["program manager", "project manager"]
+    if "manager" in title and not any(ok in title for ok in _ENTRY_MANAGER_OK):
+        return {
+            "score": 0,
+            "rationale": "Manager title without program/project scope — typically requires experience",
+            "flags": "Manager role",
+        }
+
     years = _extract_years_required(text)
     if years is not None:
         return {
@@ -343,8 +357,10 @@ def evaluate_job(job: Job) -> dict:
 
     # ── Component 1: entry-level status (0–5 pts) ────────────────────────────
 
-    entry_pts = 2  # default: no disqualifying requirements found
-    entry_label = "no experience requirement"
+    has_description = bool(text.strip())
+    # No description = can't confirm entry-level, score conservatively
+    entry_pts = 2 if has_description else 1
+    entry_label = "no experience requirement found" if has_description else "no description — entry-level unverified"
     new_grad_signal = ""
     for signal in _ENTRY_LEVEL_SIGNALS:
         if signal in text or signal in title:
