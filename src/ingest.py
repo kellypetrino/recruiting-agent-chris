@@ -1,5 +1,6 @@
 """Orchestrates fetching from all configured ATS sources and writing to the DB."""
 
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -32,8 +33,23 @@ def load_config(path: Path = _CONFIG_PATH) -> dict:
 
 
 def upsert_postings(postings: list[JobPosting], session) -> tuple[int, int]:
-    """Insert new jobs, skip duplicates. Returns (inserted, skipped)."""
-    inserted = skipped = 0
+    """Insert new jobs; update fetched_at for existing ones. Returns (inserted, refreshed)."""
+    if not postings:
+        return 0, 0
+
+    now = datetime.utcnow()
+    incoming_ids = {p.job_id for p in postings}
+
+    # Which of these job_ids already exist?
+    existing_ids = {
+        row[0]
+        for row in session.execute(
+            Job.__table__.select().with_only_columns(Job.__table__.c.job_id)
+            .where(Job.__table__.c.job_id.in_(incoming_ids))
+        )
+    }
+
+    inserted = refreshed = 0
     for p in postings:
         stmt = (
             insert(Job)
@@ -48,17 +64,21 @@ def upsert_postings(postings: list[JobPosting], session) -> tuple[int, int]:
                 description_raw=p.description_raw,
                 salary_range=p.salary_range,
                 source=p.source,
-                fetched_at=p.fetched_at,
+                fetched_at=now,
             )
-            .on_conflict_do_nothing(index_elements=["job_id"])
+            .on_conflict_do_update(
+                index_elements=["job_id"],
+                set_={"fetched_at": now},
+            )
         )
-        result = session.execute(stmt)
-        if result.rowcount:
-            inserted += 1
+        session.execute(stmt)
+        if p.job_id in existing_ids:
+            refreshed += 1
         else:
-            skipped += 1
+            inserted += 1
+
     session.commit()
-    return inserted, skipped
+    return inserted, refreshed
 
 
 def run_ingest(config_path: Path = _CONFIG_PATH) -> dict:
@@ -89,14 +109,14 @@ def run_ingest(config_path: Path = _CONFIG_PATH) -> dict:
                         continue
                     try:
                         postings = custom_scraper.fetch_jobs(career_url, name, default_client, claude_client)
-                        inserted, skipped = upsert_postings(postings, session)
-                        stats[name] = {"fetched": len(postings), "inserted": inserted, "skipped": skipped}
+                        inserted, refreshed = upsert_postings(postings, session)
+                        stats[name] = {"fetched": len(postings), "inserted": inserted, "refreshed": refreshed}
                         log.info(
                             "ingest.done",
                             company=name,
                             fetched=len(postings),
                             inserted=inserted,
-                            skipped=skipped,
+                            refreshed=refreshed,
                         )
                     except Exception:
                         log.exception("ingest.error", company=name)
@@ -115,17 +135,36 @@ def run_ingest(config_path: Path = _CONFIG_PATH) -> dict:
                 client = workday_client if ats == "workday" else default_client
                 try:
                     postings = handler(board_id, name, client)
-                    inserted, skipped = upsert_postings(postings, session)
-                    stats[name] = {"fetched": len(postings), "inserted": inserted, "skipped": skipped}
+                    inserted, refreshed = upsert_postings(postings, session)
+                    stats[name] = {"fetched": len(postings), "inserted": inserted, "refreshed": refreshed}
                     log.info(
                         "ingest.done",
                         company=name,
                         fetched=len(postings),
                         inserted=inserted,
-                        skipped=skipped,
+                        refreshed=refreshed,
                     )
                 except Exception:
                     log.exception("ingest.error", company=name)
                     stats[name] = {"error": True}
+
+    # Purge jobs not seen in any recent fetch — they've been closed at the source.
+    # Only purge API-backed sources (greenhouse, workday, lever, ashby, eightfold)
+    # where fetched_at is reliably updated every run. Custom-scraped jobs aren't
+    # always re-fetched fully, so leave them alone.
+    with SessionLocal() as session:
+        cutoff = datetime.utcnow() - timedelta(days=45)
+        api_sources = list(_ATS_HANDLERS.keys())
+        result = session.execute(
+            Job.__table__.delete().where(
+                Job.__table__.c.fetched_at < cutoff,
+                Job.__table__.c.source.in_(api_sources),
+            )
+        )
+        purged = result.rowcount
+        session.commit()
+    if purged:
+        log.info("ingest.purged_stale", count=purged, cutoff_days=45)
+        stats["__purged__"] = purged
 
     return stats
