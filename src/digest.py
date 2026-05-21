@@ -285,7 +285,7 @@ def send_digest(tier1: list[DigestJob], tier2: list[DigestJob]) -> str:
     return f"sent to {DIGEST_TO}"
 
 
-def run_digest(all_time: bool = False) -> dict:
+def run_digest(all_time: bool = True) -> dict:
     """Fetch jobs, render, and send. Returns stats dict."""
     if all_time:
         tier1, tier2 = fetch_all_scored_jobs()
