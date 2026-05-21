@@ -12,12 +12,30 @@ Score values:
 import re
 import structlog
 from datetime import datetime
+from pathlib import Path
 
 import httpx
+import yaml
 
 from src.db import Job, SessionLocal
 
 log = structlog.get_logger(__name__)
+
+# Board-id lookup so we can hit the Greenhouse API for custom-domain URLs (gh_jid=)
+def _load_greenhouse_boards() -> dict[str, str]:
+    try:
+        config = yaml.safe_load(
+            (Path(__file__).parent.parent / "config" / "target_companies.yaml").read_text()
+        )
+        return {
+            c["name"]: c["board_id"]
+            for c in config.get("companies", [])
+            if c.get("ats") == "greenhouse" and c.get("board_id") and c["board_id"] != "TODO"
+        }
+    except Exception:
+        return {}
+
+_GREENHOUSE_BOARDS = _load_greenhouse_boards()
 
 # ── Description enrichment ────────────────────────────────────────────────────
 
@@ -29,12 +47,24 @@ def _strip_tags(html: str) -> str:
     return _WS_RE.sub(" ", _TAG_RE.sub(" ", html)).strip()
 
 
-def _fetch_greenhouse_description(url: str, client: httpx.Client) -> str:
-    """Greenhouse boards API detail endpoint returns full job content as HTML."""
+def _fetch_greenhouse_description(url: str, company: str, client: httpx.Client) -> str:
+    """Greenhouse boards API detail endpoint returns full job content as HTML.
+
+    Handles both job-boards.greenhouse.io URLs and custom-domain gh_jid= URLs.
+    """
+    # Standard: job-boards.greenhouse.io/{board}/jobs/{id}
     m = re.search(r"greenhouse\.io/([^/]+)/jobs/(\d+)", url)
-    if not m:
-        return ""
-    board_id, job_id = m.groups()
+    if m:
+        board_id, job_id = m.groups()
+    else:
+        # Custom domain: ?gh_jid=12345 — look up board_id from config
+        m2 = re.search(r"[?&]gh_jid=(\d+)", url)
+        if not m2:
+            return ""
+        job_id = m2.group(1)
+        board_id = _GREENHOUSE_BOARDS.get(company, "")
+        if not board_id:
+            return ""
     try:
         resp = client.get(
             f"https://boards-api.greenhouse.io/v1/boards/{board_id}/jobs/{job_id}",
@@ -55,9 +85,10 @@ def _fetch_workday_description(url: str, client: httpx.Client) -> str:
     if not m:
         return ""
     tenant, instance, board, external_path = m.groups()
+    # external_path starts with /job/... — omit the /jobs prefix
     api_url = (
         f"https://{tenant}.{instance}.myworkdayjobs.com"
-        f"/wday/cxs/{tenant}/{board}/jobs{external_path}"
+        f"/wday/cxs/{tenant}/{board}{external_path}"
     )
     try:
         resp = client.get(api_url, timeout=15.0)
@@ -75,7 +106,7 @@ def _fetch_workday_description(url: str, client: httpx.Client) -> str:
 def enrich_description(job: Job, client: httpx.Client) -> str:
     """Fetch a job description from its ATS API. Returns empty string on failure."""
     if job.source == "greenhouse":
-        return _fetch_greenhouse_description(job.url, client)
+        return _fetch_greenhouse_description(job.url, job.company, client)
     if job.source == "workday":
         return _fetch_workday_description(job.url, client)
     return ""
