@@ -192,7 +192,7 @@ def score_job(job: Job, client: anthropic.Anthropic) -> dict:
     response = client.messages.create(
         model=MODEL,
         max_tokens=256,
-        system=_SYSTEM,
+        system=[{"type": "text", "text": _SYSTEM, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": prompt}],
     )
     raw = response.content[0].text

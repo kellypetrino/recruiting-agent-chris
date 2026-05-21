@@ -84,7 +84,7 @@ def _extract_jobs(content: str, company: str, career_url: str, claude: anthropic
     resp = claude.messages.create(
         model=_MODEL,
         max_tokens=4096,
-        system=_EXTRACT_SYSTEM,
+        system=[{"type": "text", "text": _EXTRACT_SYSTEM, "cache_control": {"type": "ephemeral"}}],
         messages=[{
             "role": "user",
             "content": f"Company: {company}\nCareer page: {career_url}\n\nPage content:\n{truncated}",
